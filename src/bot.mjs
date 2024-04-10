@@ -1,8 +1,8 @@
 "use strict";
 import fs from 'node:fs/promises'
 
-import {parse_command} from "./parse_command.mjs"
-import {Util} from "./utils.mjs"
+import { parse_command } from "./parse_command.mjs"
+import { Util } from "./utils.mjs"
 import { Command, CommandContext } from "./command.mjs"
 
 import { MongoClient } from 'mongodb'
@@ -15,15 +15,6 @@ import {
 	getStatusCode,
 } from 'http-status-codes';
 
-
-
-
-/* Sync: 
- *
- * Handle 502
- * 400 Bad request
- *
- */
 
 
 
@@ -45,6 +36,9 @@ class Database {
 	async close(){
 		await this.client.close()
 	}
+	
+	/* TODO: Use transactions. Currently not necessary since no events 
+	 * are ever processed in parallel, but it'll be a good exercise */
 
 	async get_meta(name) {
 		const query = {_id: name};
@@ -92,7 +86,6 @@ class Database {
 		e._id = e.room_id+e.event_id;
 		const result = await this.events.insertOne(e);
 	}
-
 }
 
 async function import_history(db) {
@@ -174,7 +167,6 @@ class Room {
 	}
 
 	test(){
-
 			let room = this.rooms[room_id];
 
 			let name;
@@ -197,8 +189,6 @@ class Room {
 				console.log(name)
 			
 			this.rooms[room_id].name = name
-
-
 	}
 }
 
@@ -275,9 +265,7 @@ class Bot {
 			unsynced: true,
 		}
 
-
 		this.commands = {}
-
 		this.rooms = {}
 
 	}
@@ -299,32 +287,6 @@ class Bot {
 			return 1
 		}
 
-		if(event) {
-			/*
-			let userId = event.getSender();
-			let roomId = event.getRoomId();
-			console.log(userId, roomId)
-
-			let room = this.client.getRoom(roomId)
-			let member = room.getMember(userId)
-
-			if (member.powerLevel < cmd.filter.level) {
-				console.log("Insufficient level")
-				return 1;
-			}
-
-
-			let allow_room = cmd.filter.room[roomId]
-			if (allow_room === undefined)
-				allow_room = cmd.filter.room.any 
-			
-			if (!allow_room) {
-				console.log(`Not allowed in this room ${allow_room}`)
-				return 
-			}
-			*/
-			//return 1
-		}
 		
 		if (!event && cmd.filter.console == false) {
 			console.log("This command cannot be run on the console.")
@@ -351,11 +313,6 @@ class Bot {
 
 			let room   = this.get_room(event.room_id)
 			let member = room.get_member(event.sender)
-
-			console.log(room)
-			console.log(member)
-			console.log(event.sender)
-			console.log(member.powerlevel)
 
 				
 			if (cmd.filter.level > member.powerlevel) {
@@ -493,8 +450,6 @@ class Bot {
 
 		for (let room_id in sync.rooms.join) {
 
-			//console.log(`Room ${room_id}`)
-	
 			this.rooms[room_id] ??= {
 				state: {},
 				member: {},
@@ -872,6 +827,8 @@ class Bot {
 		if (!e.room_id || !e.event_id || !e.sender) {
 			throw "Malformed event"
 		}
+
+		let session =
 
 		let user = await this.get_user_by_event(e);
 		user.rooms[e.room_id].events[e.type]??=0;
