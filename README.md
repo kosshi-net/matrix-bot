@@ -89,6 +89,10 @@ is to implement a type of
 feature, which still gives read access and works for rooms below Version 7. 
 The "owner" of the bot is alerted about newly joined users.
 
+## Dependencies
+- NodeJS
+- [mongodb](https://www.npmjs.com/package/mongodb)
+- [http-status-codes](https://www.npmjs.com/package/http-status-codes)
 
 ## License
 MIT
