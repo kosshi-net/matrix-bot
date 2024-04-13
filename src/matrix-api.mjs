@@ -66,7 +66,7 @@ class MatrixAPI {
 		let ret = await this.request(call) 
 		if(ret.code != 200) throw `Server responded with ${ret.code}`
 		let state = JSON.parse(ret.body)
-		await fs.writeFile("./state.json", JSON.stringify(state, null, 4))
+		//await fs.writeFile("./state.json", JSON.stringify(state, null, 4))
 		return state;
 	}
 
