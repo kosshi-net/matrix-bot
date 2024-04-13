@@ -60,6 +60,9 @@ Below is an example `config.json`. The real one is .gitignored
 		"example.org": true
 	},
 
+    "gatekeep_kick_message": "Insufficient trust",
+	"gatekeep_mute_message": "To prevent abuse, new users are muted.",
+
 
 	"word_filter": [
 		"censorme"

@@ -613,7 +613,7 @@ class Bot {
 
 		if (this.config.rooms[room.id].trusted_only) {
 			setTimeout( () => {
-				this.api.v3_kick(room.id, user.id, "Insufficient trust");
+				this.api.v3_kick(room.id, user.id, this.config.gatekeep_kick_message);
 			}, 2500);
 
 			console.log("Kick user due to insufficient trust");
@@ -634,7 +634,7 @@ class Bot {
 
 		this.send_mention(room.id,
 			[user.id, this.config.owner_id],
-			"To prevent abuse, new users are muted. Please wait, you'll be whitelisted shortly."
+			this.config.gatekeep_mute_message
 		);
 	}
 
@@ -827,8 +827,6 @@ class Bot {
 		if (!e.room_id || !e.event_id || !e.sender) {
 			throw "Malformed event"
 		}
-
-		let session =
 
 		let user = await this.get_user_by_event(e);
 		user.rooms[e.room_id].events[e.type]??=0;
