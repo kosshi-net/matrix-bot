@@ -61,7 +61,7 @@ Below is an example `config.json`. The real one is .gitignored
 	},
 
     "gatekeep_kick_message": "Insufficient trust",
-	"gatekeep_mute_message": "To prevent abuse, new users are muted.",
+    "gatekeep_mute_message": "To prevent abuse, new users are muted.",
 
 
 	"word_filter": [
@@ -105,8 +105,11 @@ history, eg the room's creator.
 Then add the room to the configuration file. Reset and rebuilt the 
 database by setting `WIPE_DB=1` environment variable.
 
+If you wish to retain user ban/mute etc status, run `export` from the bot's 
+command line before db reset. Then run `import` once db has been rebuilt. 
+
 ## Dependencies
-- NodeJS
+- Node.js
 - [mongodb](https://www.npmjs.com/package/mongodb)
 - [http-status-codes](https://www.npmjs.com/package/http-status-codes)
 

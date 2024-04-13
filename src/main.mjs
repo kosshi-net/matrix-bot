@@ -366,6 +366,44 @@ async function main() {
 	.allow_any_room()
 	.register(bot)
 
+
+	new Command("export", async function(ctx) {
+		let users = await this.db.users.find( { onjoin: {$ne:null} } ).toArray()
+		if (!users) {
+			console.log("Users undefined")
+		}
+		let file = {}
+		users.forEach((user)=>{
+			file[user._id] = {onjoin:user.onjoin}
+		})
+		let data = JSON.stringify(file, null, 4) 
+		console.log(data)
+		await fs.writeFile("export.json", data)
+	})
+	.allow_console()
+	.register(bot)
+
+	new Command("import", async function(ctx) {
+
+		let data = await fs.readFile("export.json")
+		data = JSON.parse(data)
+		console.log(data)
+		for (let key in data) {
+			let user = data[key]
+			console.log(key, user)
+
+			let dbuser = await this.db.get_user(key);
+			if (!user) {
+				ctx.reply("Invalid user!");
+				return
+			}
+			dbuser.onjoin = user.onjoin
+			await this.db.put_user(dbuser);
+		}
+	})
+	.allow_console()
+	.register(bot)
+
 	await bot.init()
 	//await bot.build_user_db()
 	bot.sync()
