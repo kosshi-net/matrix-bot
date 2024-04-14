@@ -6,6 +6,7 @@ import {parse_command} from "./parse_command.mjs"
 import {Command} from "./command.mjs"
 import {Util} from "./utils.mjs"
 import {Bot, Room, Member} from "./bot.mjs"
+import {Transaction} from "./database.mjs"
 
 
 const rl = readline.createInterface({ input, output });
@@ -42,7 +43,6 @@ async function main() {
 	new Command("level.get", async function(ctx) {
 		let room_id = ctx.event.room_id
 		let user_id = ctx.argv[1]
-		
 		let member = this.get_member(room_id, user_id)
 
 		let level = member.powerlevel
@@ -168,12 +168,18 @@ async function main() {
 	new Command("db.get_user", async function(ctx) {
 		let user_id = ctx.argv[1];
 
+		let field = ctx.argv[2];
+
 		let user = await this.db.get_user(user_id);
 		if (!user) {
 			ctx.reply("Invalid user!");
 			return
 		}
-		ctx.reply(JSON.stringify(user))
+		if (field) {
+			ctx.reply( JSON.stringify(user[field]) )
+		} else {
+			ctx.reply(JSON.stringify(user, null, 4))
+		}
 	})
 	.allow_console()
 	.allow_any_room()
@@ -325,6 +331,39 @@ async function main() {
 	.allow_any_room()
 	.register(bot)
 
+	/* Transaction test */
+	new Command("whitelist.tx", async function(ctx) {
+		let user_id = ctx.argv[1];
+		let tx = new Transaction(this.db)
+		await tx.start()
+		do {
+			let user = await tx.user(user_id)
+			console.log("User")
+			console.log(user)
+			if (!user) {
+				ctx.reply("Invalid user!");
+				tx.abort()
+				return
+			}
+			user.onjoin = "whitelist"
+			console.log("Retry")
+			await Util.sleep(1000)
+		} while(await tx.retry())
+
+		for (let room in this.config.rooms) {
+			let member = new Member(this, room, user_id);
+			if (member.is_member() && member.powerlevel <= 0) {
+				console.log("Changed in room "+room)
+				await member.set_powerlevel(1)
+			}
+		}
+	})
+	.allow_console()
+	.allow_any_room()
+	.register(bot)
+
+
+
 	new Command("mute", async function(ctx) {
 		let user_id = ctx.argv[1];
 		let user = await this.db.get_user(user_id);
@@ -403,7 +442,7 @@ async function main() {
 	})
 	.allow_console()
 	.register(bot)
-
+	
 	await bot.init()
 	//await bot.build_user_db()
 	bot.sync()

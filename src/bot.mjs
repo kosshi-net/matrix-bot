@@ -5,88 +5,9 @@ import { parse_command } from "./parse_command.mjs"
 import { Util } from "./utils.mjs"
 import { Command, CommandContext } from "./command.mjs"
 
-import { MongoClient } from 'mongodb'
 import { MatrixAPI } from "./matrix-api.mjs"
+import { Database } from "./database.mjs"
 
-import {
-	ReasonPhrases,
-	StatusCodes,
-	getReasonPhrase,
-	getStatusCode,
-} from 'http-status-codes';
-
-
-
-
-class Database {
-	constructor(config) {
-		this.client = new MongoClient(config.db);
-		this.database = this.client.db("2023-06-16");
-		this.events = this.database.collection("events");
-		this.users = this.database.collection("users");
-		this.meta  = this.database.collection("meta");
-
-	}
-
-	async wipe(){
-		await this.database.dropDatabase()
-		console.log("Database wiped")
-	}
-
-	async close(){
-		await this.client.close()
-	}
-	
-	/* TODO: Use transactions. Currently not necessary since no events 
-	 * are ever processed in parallel, but it'll be a good exercise */
-
-	async get_meta(name) {
-		const query = {_id: name};
-		let data = await this.meta.findOne(query)
-		return data
-	}
-
-	async put_meta(meta) {
-		const query = {_id: meta._id}
-		const result = await this.meta.updateOne(query, {$set: meta}, {upsert:true});
-	}
-
-	async get_user(name) {
-		const query = {_id: name};
-		let data = await this.users.findOne(query)
-		return data
-	}
-
-	async put_user(meta) {
-		const query = {_id: meta._id}
-		const result = await this.users.updateOne(query, {$set: meta}, {upsert:true});
-	}
-
-
-	async all_users(){
-		let users = await this.users.find().toArray()
-		return users
-	}
-
-	async get_event(room_id, event_id) {
-		if (!room_id || !event_id) throw "Error: db.get_event requires two arguments."
-		const query = {
-			_id: room_id+event_id
-		};
-
-		let e = await this.events.findOne(query);
-		return e
-	}
-
-	async new_event(e) {
-		if (!e.room_id || !e.event_id) {
-			throw "Malformed event"
-		}
-		
-		e._id = e.room_id+e.event_id;
-		const result = await this.events.insertOne(e);
-	}
-}
 
 async function import_history(db) {
 	console.log("Importing history ...")
@@ -99,7 +20,6 @@ async function import_history(db) {
 		_id: "rooms",
 		rooms: {}
 	}
-
 	for (let room of dirs) {
 	
 		let token = "s0_0_0_0_0_0_0_0_0_0"
@@ -161,9 +81,11 @@ class Room {
 	}
 
 	get displayname() {
+		/*
 		let name_event = room.state["m.room.name"]
 		let create_event = room.state["m.room.create"]
 		let alias_event = room.state["m.room.canonical_alias"]
+		*/
 	}
 
 	test(){
@@ -191,7 +113,6 @@ class Room {
 			this.rooms[room_id].name = name
 	}
 }
-
 
 class Member {
 	constructor(bot, room_id, user_id){
@@ -253,6 +174,7 @@ class Member {
 		return name;
 	}
 }
+
 
 class Bot {
 	constructor(config) {
@@ -893,7 +815,6 @@ class Bot {
 					u[t.sender] ??= await this.get_user_by_event(t)
 					u[t.sender].rooms[e.room_id].reactions.recv[key] ??= 0;
 					u[t.sender].rooms[e.room_id].reactions.recv[key]--;
-					
 				}
 			}
 		} 
