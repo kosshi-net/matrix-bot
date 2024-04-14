@@ -1,7 +1,7 @@
 # Matrix room management bot 
 
 This is a personal project which I've published as a demonstration of my more 
-recent Javascript/Node.JS projects utilizing MongoBD. 
+recent Javascript/Node.js projects utilizing MongoBD. 
 
 This is deployed to manage rooms I run on [Matrix](https://matrix.org),
 which is a decentralized Slack/Discord-like messaging platform. 
@@ -20,6 +20,21 @@ maintains statistics about participating users.
 The bot is able to fetch history to recover from downtime 
 or truncated sync responses.
 
+### Adding bot to rooms
+Since this project is under eternal development, the history is imported to 
+local files first to avoid bombarding matrix servers when db inevitably needs 
+to be rebuilt. 
+
+First you must import room history with `room-importer` to a folder 
+`./history/<room>/*.json`. Room name does not matter. 
+Preferably do this using an account that has access to the beginning of room 
+history, eg the room's creator. 
+
+Then add the room to the configuration file. Reset and rebuilt the 
+database by setting `WIPE_DB=1` environment variable.
+
+If you wish to retain user ban/mute etc status, run `export` from the bot's 
+command line before db reset. Then run `import` once db has been rebuilt. 
 
 ## Config
 
@@ -60,8 +75,8 @@ Below is an example `config.json`. The real one is .gitignored
 		"example.org": true
 	},
 
-    "gatekeep_kick_message": "Insufficient trust",
-    "gatekeep_mute_message": "To prevent abuse, new users are muted.",
+	"gatekeep_kick_message": "Insufficient trust",
+	"gatekeep_mute_message": "To prevent abuse, new users are muted.",
 
 
 	"word_filter": [
@@ -92,21 +107,7 @@ is to implement a type of
 feature, which still gives read access and works for rooms below Version 7. 
 The "owner" of the bot is alerted about newly joined users.
 
-## Adding bot to rooms
-Since this project is under eternal development, the history is imported to 
-local files first to avoid bombarding matrix servers when db inevitably needs 
-to be rebuilt. 
 
-First you must import room history with `room-importer` to a folder 
-`./history/<room>/*.json`. Room name does not matter. 
-Preferably do this using an account that has access to the beginning of room 
-history, eg the room's creator. 
-
-Then add the room to the configuration file. Reset and rebuilt the 
-database by setting `WIPE_DB=1` environment variable.
-
-If you wish to retain user ban/mute etc status, run `export` from the bot's 
-command line before db reset. Then run `import` once db has been rebuilt. 
 
 ## Dependencies
 - Node.js
