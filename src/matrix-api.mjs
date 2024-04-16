@@ -70,6 +70,25 @@ class MatrixAPI {
 		return state;
 	}
 
+	async v3_members(room_id, filter) {
+		let opt = ""
+		if (filter) {
+			opt = `/${filter}`
+		}
+		let call = {
+			path: `/_matrix/client/v3/rooms/${room_id}/members${opt}`,
+			hostname:this.config.hostname,
+			headers: {
+				Authorization: `Bearer ${this.config.accessToken}`
+			}
+		}
+		let ret = await this.request(call) 
+		if(ret.code != 200) throw `Server responded with ${ret.code}`
+		let state = JSON.parse(ret.body)
+		//await fs.writeFile("./state.json", JSON.stringify(state, null, 4))
+		return state;
+	}
+
 	async v3_put_state(room_id, type, data) {
 		let call = {
 			method: "PUT",

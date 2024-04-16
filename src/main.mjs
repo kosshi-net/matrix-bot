@@ -406,6 +406,117 @@ async function main() {
 	.register(bot)
 
 
+	new Command("alljoins", async function(ctx) {
+
+		let room_id = ctx.event?.room_id
+		//let room = this.get_room(room_id)
+
+		let query = {room_id:room_id, type:"m.room.member"}
+		let ret = await this.db.events.find(query).toArray()
+		let users = {}
+		for (let e of ret) {
+			if (!users[e.state_key]) {
+				users[e.state_key] = e
+				continue
+			}
+			if (e.origin_server_ts > users[e.state_key].origin_server_ts) {
+				users[e.state_key] = e
+			}
+		}
+		
+		fs.writeFile("dump.json", JSON.stringify(users, null, 4))
+	})
+	.allow_any_room()
+	.register(bot)
+
+
+	new Command("atlevel", async function(ctx) {
+		let room_id = ctx.event?.room_id
+		let room = this.get_room(room_id)
+		let level = parseInt(ctx.argv[1]);
+
+		let action = ctx.argv[2];
+
+		if (level === null || isNaN(level)) {
+			console.log("Invalid level ${level}");
+			return
+		}
+	
+		let now = new Date()
+
+		let list = []
+		let count = 0
+
+		let query = {room_id:room_id, type:"m.room.member"}
+		let ret = await this.db.events.find(query).toArray()
+		let users = {}
+		for (let e of ret) {
+			if (!users[e.state_key]) {
+				users[e.state_key] = e
+				continue
+			}
+			if (e.origin_server_ts > users[e.state_key].origin_server_ts) {
+				users[e.state_key] = e
+			}
+		}
+
+		let dump = []
+
+		for (let user_id in users) {
+			count++
+			let member = room.get_member(user_id)
+
+			let state = users[user_id]
+			if (state.content.membership == "join" && member.powerlevel == level) {
+
+				let fake_event = {
+					origin_server_ts: state.origin_server_ts,
+					sender: state.state_key,
+					room_id: state.room_id,
+				}
+				let dbuser = await this.get_user_by_event(fake_event)
+
+				list.push(dbuser)
+			}
+		}
+		
+		list.sort((a,b)=>{
+			return b.first_seen - a.first_seen
+		})
+
+		let dumptxt = `Users at level ${level}\n`
+		for (let i in list){
+			let user = list[i]
+
+			let since = Util.format_time(now - new Date(user.first_seen));
+			let line = `${user._id.slice(1).padEnd(50)} ${since.padEnd(10)}`
+			console.log(line)
+			dump.push(user._id)
+			dumptxt += line + "\n"
+
+		}
+
+		await fs.writeFile("dump.json", JSON.stringify(dump, null, 4))
+		await fs.writeFile("dump.txt", dumptxt)
+	
+		if (action == "kick") {
+			for (let user_id of dump) {
+				console.log(`Kick ${user_id}`)
+				if (this.rooms[room_id].member[user_id])
+					await this.api.v3_kick(room_id, user_id)
+			}
+
+		} else {
+			if (ctx.event)
+				ctx.reply(dumptxt)
+		}	
+
+		console.log(count, action)
+
+	})
+	.allow_any_room()
+	.register(bot)
+
 	new Command("export", async function(ctx) {
 		let users = await this.db.users.find( { onjoin: {$ne:null} } ).toArray()
 		if (!users) {
@@ -443,6 +554,70 @@ async function main() {
 	.allow_console()
 	.register(bot)
 	
+
+	/* TODO store ACL in database? */
+	new Command("acl", async function(ctx) {
+		if (!ctx.argv[1]) {
+			ctx.reply("Server needed")
+			return
+		}
+
+		let acl = await fs.readFile("acl.json")
+		acl = JSON.parse(acl)
+		
+		acl.deny.push(ctx.argv[1])
+
+		await fs.writeFile("acl.json", JSON.stringify(acl, null, 4))
+		ctx.reply(`${ctx.argv[1]} added to ACL`)
+	})
+	.allow_console()
+	.allow_any_room()
+	.register(bot)
+
+
+	new Command("acl.from_list", async function(ctx) {
+
+		let acl = await fs.readFile("acl.json")
+		acl = JSON.parse(acl)
+
+		let raid = await fs.readFile("../raid.json")
+		raid = JSON.parse(raid)
+
+		let hs = {}
+
+		for (let user_id of raid) {
+			hs[user_id.split(":")[1]] = true
+		}
+
+		for (let domain in hs) {
+			acl.deny.push(domain)
+		}
+
+		let txt = JSON.stringify(acl, null, 4) 
+		console.log(txt)
+		await fs.writeFile("acl.json", txt)
+
+	})
+	.allow_console()
+	.allow_any_room()
+	.register(bot)
+
+	new Command("acl.reload", async function(ctx) {
+
+		let data = await fs.readFile("acl.json")
+		data = JSON.parse(data)
+
+		for (let room_id in this.config.rooms) {
+			if (!this.config.rooms[room_id].manage) {
+				continue
+			}
+			await this.api.v3_put_state(room_id, "m.room.server_acl", data)
+		}
+	})
+	.allow_console()
+	.allow_any_room()
+	.register(bot)
+
 	await bot.init()
 	//await bot.build_user_db()
 	bot.sync()

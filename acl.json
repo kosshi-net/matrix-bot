@@ -1,0 +1,36 @@
+{
+    "allow": [
+        "*"
+    ],
+    "allow_ip_literals": false,
+    "deny": [
+        "pijean.ovh",
+        "sync.coffee",
+        "xolus.net",
+        "matrix.flake.sh",
+        "mawoka.eu.org",
+        "clortox.com",
+        "rat.ix.tc",
+        "vforge.net",
+        "matrix.meetz.pw",
+        "matrix.0124816.xyz",
+        "vigilante.chat",
+        "matrix.jpegbot.com",
+        "dingste.de",
+        "matrix.kradart.win",
+        "matrix.zmrs.de",
+        "faithcollapsing.com",
+        "cowingtonpost.com",
+        "matrix.free.de",
+        "kanp.ai",
+        "tutorwix.org",
+        "chat.lamer-ethos.site",
+        "mobilizon.us",
+        "matrix.birbs.icu",
+        "conduit.harpy.faith",
+        "vicicode.com",
+        "matrix.fabseman.space",
+        "genzedong.xyz",
+        "keepsecret.io"
+    ]
+}
