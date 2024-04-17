@@ -1,91 +1,87 @@
 "use strict";
-import https from "https"
+import https from "https";
 
-import {
-	getReasonPhrase,
-} from 'http-status-codes';
+import { getReasonPhrase } from "http-status-codes";
 
-function sleep(ms:number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function sleep(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function statusPhrase(code:number) {
+function statusPhrase(code: number) {
 	let reason = "";
 	try {
-		reason = getReasonPhrase(code)
-	} catch(err) {
-		reason = "Unknown status code"	
+		reason = getReasonPhrase(code);
+	} catch (err) {
+		reason = "Unknown status code";
 	}
-	return reason
+	return reason;
 }
 
-function request(options:any, body:any){
-
-	return new Promise(function(resolve, reject){
-		let req = https.request(options, (r)=>{
+function request(options: any, body: any) {
+	return new Promise(function (resolve, reject) {
+		let req = https.request(options, (r) => {
 			let data = "";
-			r.setEncoding("utf8")
-			r.on('data', chunk=>{ data += chunk })
-			r.on('end', ()=>{
-				resolve(
-					{response:r, body:data, code:r.statusCode}
-				)
-			})
-		})
-		req.on('error', (err)=>{
-			console.log(err)
-			reject(err)
-		})
-		req.end(body)
-	})
+			r.setEncoding("utf8");
+			r.on("data", (chunk) => {
+				data += chunk;
+			});
+			r.on("end", () => {
+				resolve({ response: r, body: data, code: r.statusCode });
+			});
+		});
+		req.on("error", (err) => {
+			console.log(err);
+			reject(err);
+		});
+		req.end(body);
+	});
 }
 
-function format_time(ms:number) {
-
+function format_time(ms: number) {
 	if (ms < 1000) {
-		return `${ms}ms`
+		return `${ms}ms`;
 	}
 
-	let sec = Math.floor(ms / 1000)
+	let sec = Math.floor(ms / 1000);
 
 	if (sec <= 60) {
-		return `${sec}s`
+		return `${sec}s`;
 	}
 
-	let min = Math.floor(sec / 60)
+	let min = Math.floor(sec / 60);
 
 	if (min <= 60) {
-		return `${min}m ${sec%60}s`
+		return `${min}m ${sec % 60}s`;
 	}
 
-	let hour = Math.floor(min / 60)
+	let hour = Math.floor(min / 60);
 
 	if (hour <= 24) {
-		return `${hour}h ${min%60}m`
+		return `${hour}h ${min % 60}m`;
 	}
 
-	let day = Math.floor(hour / 24)
+	let day = Math.floor(hour / 24);
 
 	if (day <= 30) {
-		return `${day}d ${hour%24}h`
+		return `${day}d ${hour % 24}h`;
 	}
 
-	let month = Math.floor(day / 30)
+	let month = Math.floor(day / 30);
 
 	if (month <= 12) {
-		return `${month}M ${day%30}d`
+		return `${month}M ${day % 30}d`;
 	}
 
-	let year = Math.floor(month / 12)
+	let year = Math.floor(month / 12);
 
-	return `${year}Y ${month%12}M`
+	return `${year}Y ${month % 12}M`;
 }
 
 let Util = {
-	sleep:sleep, 
-	request:request,
-	format_time:format_time,
-	status_phrase:statusPhrase,
-}
+	sleep: sleep,
+	request: request,
+	format_time: format_time,
+	status_phrase: statusPhrase,
+};
 
-export { Util }
+export { Util };
