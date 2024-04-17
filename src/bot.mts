@@ -197,6 +197,7 @@ class Bot {
 	commands: any;
 	rooms: any;
 	exit: boolean;
+
 	constructor(config) {
 		this.config = config;
 		this.db = new Database(this.config);
@@ -205,11 +206,34 @@ class Bot {
 		this.var = {
 			_counter: 0,
 			unsynced: true,
+
+			joins: {
+				rooms:{},
+				timeout: 0 /* For join alert */
+			}
+
 		};
+
+		
+		this.reset_join_counters()
+		setInterval(this.reset_join_counters.bind(this), 
+			1000 * 60 // Minute
+			* 60
+		);
+		
 
 		this.commands = {};
 		this.rooms = {};
 		this.exit = false;
+	}
+
+	reset_join_counters(){
+		for (let room_id in this.config.rooms) {
+			this.var.joins.rooms[room_id] = {
+				list: [],
+				count: 0,
+			}
+		}
 	}
 
 	register_command(cmd) {
@@ -495,6 +519,8 @@ class Bot {
 		return room;
 	}
 
+
+
 	async join_alert(e) {
 		let room = this.get_room(e.room_id);
 		let user = room.get_user(e.state_key);
@@ -511,6 +537,25 @@ class Bot {
 			e.unsigned.prev_content.membership == "join"
 		)
 			return;
+
+		/* Add for flood counting */
+		this.var.joins.rooms[room.id].count++;
+		
+		if (this.var.joins.rooms[room.id].count >= 10 ) 
+		{
+			const data = {join_rule: "invite"};
+			await this.api.v3_put_state(
+				room.id,
+				"m.room.join_rules", 
+				data
+			);
+
+			await this.send_mention(
+				room.id,
+				[this.config.owner_id],
+				"Flood detected, room in lockdown."
+			);
+		}
 
 		let dbuser = await this.db.get_user(user.id);
 		if (!dbuser) throw "No dbuser"; // TODO to shut up TS, investigate later
@@ -546,7 +591,7 @@ class Bot {
 					user.id,
 					this.config.gatekeep_kick_message,
 				);
-			}, 2500);
+			}, 1500);
 
 			console.log("Kick user due to insufficient trust");
 			return;
@@ -564,13 +609,31 @@ class Bot {
 			return;
 		}
 
-		if (true)
+		this.var.joins.rooms[room.id].list.push(user.id)
+		if (this.var.joins.timeout == 0) {
+			this.var.joins.timeout = setTimeout(this.join_alert_timeout.bind(this), 2000);
+		}
+	}
+
+	async join_alert_timeout() {
+
+		for (let room_id in this.var.joins.rooms) {
+			let r = this.var.joins.rooms[room_id];
+			if (r.list.length == 0) continue;
+
+			r.list.push(this.config.owner_id)
 			this.send_mention(
-				room.id,
-				[user.id, this.config.owner_id],
+				room_id,
+				r.list,
 				this.config.gatekeep_mute_message,
 			);
+
+			r.list = [];
+		}
+
+		this.var.joins.timeout = 0;
 	}
+
 
 	async sync_room(room_id) {
 		let room_meta = await this.db.get_meta("rooms");

@@ -93,6 +93,10 @@ async function main() {
 			}
 		});
 
+		if (ret.target.room_id.length == 0 && event) {
+			ret.target.room_id.push(event.room_id);
+		}
+
 		ctx.reply(
 			"<pre><code>" + JSON.stringify(ret, null, 4) + "</code></pre>",
 		);

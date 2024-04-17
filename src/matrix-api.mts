@@ -89,7 +89,7 @@ class MatrixAPI {
 		return state;
 	}
 
-	async v3_put_state(room_id: string, type: string, data: string) {
+	async v3_put_state(room_id: string, type: string, data: any) {
 		let call = {
 			method: "PUT",
 			path: `/_matrix/client/v3/rooms/${room_id}/state/${type}`,
