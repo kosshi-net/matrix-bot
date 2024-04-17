@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 import fs from 'node:fs/promises'
 import * as readline from 'node:readline/promises';
@@ -45,7 +46,7 @@ async function main() {
 		let user_id = ctx.argv[1]
 		let member = this.get_member(room_id, user_id)
 
-		let level = member.powerlevel
+		let level = member.powerlevel()
 
 		let content = {
 			body: `Power level of ${ctx.argv[1]} is ${level}`,
@@ -208,7 +209,7 @@ async function main() {
 	new Command("trust.top", async function(ctx) {
 		console.log("Calculating activity ...")
 		let users = await this.db.all_users();
-		let now = new Date()
+		let now = new Date().getTime();
 
 		let fusers = [];
 
@@ -221,7 +222,7 @@ async function main() {
 		})
 
 		for (let user of users) {
-			let since = Util.format_time(now - new Date(user.first_seen));
+			let since = Util.format_time(now - new Date(user.first_seen).getTime());
 			console.log(`${user._id.padEnd(50)} ${(user.trust.toFixed(1)).padEnd(10)}  ${since.padEnd(10)} ${user.msg}`)
 		}
 
@@ -235,7 +236,7 @@ async function main() {
 		let users = await this.db.all_users();
 
 		let room_id = ctx.room_id
-		let now = new Date()
+		let now = new Date().getTime()
 
 		let fusers = [];
 
@@ -248,7 +249,7 @@ async function main() {
 			for (let event in user.rooms[room_id].events)
 				event_count += user.rooms[room_id].events[event];
 			
-			let days = (now - new Date(user.first_seen)) / 1000 / 60 / 60 / 24;
+			let days = (now - new Date(user.first_seen).getTime()) / 1000 / 60 / 60 / 24;
 
 			let epd = event_count / days
 			user.epd = epd;
@@ -275,10 +276,10 @@ async function main() {
 	new Command("trust.calc", async function(ctx) {
 		let users = await this.db.all_users();
 
-		let now = new Date()
+		let now = new Date().getTime()
 
 		for (let user of users) {
-			let since = Util.format_time(now - new Date(user.first_seen));
+			let since = Util.format_time(now - new Date(user.first_seen).getTime());
 			
 			console.log(`${user._id.padEnd(50)} ${since}`)
 
@@ -321,7 +322,7 @@ async function main() {
 		await this.db.put_user(user);
 		for (let room in this.config.rooms) {
 			let member = new Member(this, room, user_id);
-			if (member.is_member() && member.powerlevel <= 0) {
+			if (member.is_member() && member.powerlevel() <= 0) {
 				console.log("Changed in room "+room)
 				await member.set_powerlevel(1)
 			}
@@ -352,7 +353,7 @@ async function main() {
 
 		for (let room in this.config.rooms) {
 			let member = new Member(this, room, user_id);
-			if (member.is_member() && member.powerlevel <= 0) {
+			if (member.is_member() && member.powerlevel() <= 0) {
 				console.log("Changed in room "+room)
 				await member.set_powerlevel(1)
 			}
@@ -442,7 +443,7 @@ async function main() {
 			return
 		}
 	
-		let now = new Date()
+		let now = new Date().getTime()
 
 		let list = []
 		let count = 0
@@ -467,7 +468,7 @@ async function main() {
 			let member = room.get_member(user_id)
 
 			let state = users[user_id]
-			if (state.content.membership == "join" && member.powerlevel == level) {
+			if (state.content.membership == "join" && member.powerlevel() == level) {
 
 				let fake_event = {
 					origin_server_ts: state.origin_server_ts,
@@ -488,7 +489,7 @@ async function main() {
 		for (let i in list){
 			let user = list[i]
 
-			let since = Util.format_time(now - new Date(user.first_seen));
+			let since = Util.format_time(now - new Date(user.first_seen).getTime());
 			let line = `${user._id.slice(1).padEnd(50)} ${since.padEnd(10)}`
 			console.log(line)
 			dump.push(user._id)
@@ -501,11 +502,18 @@ async function main() {
 	
 		if (action == "kick") {
 			for (let user_id of dump) {
-				console.log(`Kick ${user_id}`)
-				if (this.rooms[room_id].member[user_id])
+				if (this.rooms[room_id].member[user_id]) {
+					console.log(`Kick ${user_id}`)
 					await this.api.v3_kick(room_id, user_id)
+				}
 			}
-
+		}
+		else if (action == "ban") {
+			for (let user_id of dump) {
+				console.log(`Ban ${user_id}`)
+				await this.api.v3_ban(room_id, user_id)
+				await Util.sleep(3000)
+			}
 		} else {
 			if (ctx.event)
 				ctx.reply(dumptxt)
@@ -535,8 +543,7 @@ async function main() {
 
 	new Command("import", async function(ctx) {
 
-		let data = await fs.readFile("export.json")
-		data = JSON.parse(data)
+		let data = JSON.parse(await fs.readFile("export.json", "utf8"))
 		console.log(data)
 		for (let key in data) {
 			let user = data[key]
@@ -562,8 +569,7 @@ async function main() {
 			return
 		}
 
-		let acl = await fs.readFile("acl.json")
-		acl = JSON.parse(acl)
+		let acl = JSON.parse(await fs.readFile("acl.json", "utf8"))
 		
 		acl.deny.push(ctx.argv[1])
 
@@ -575,19 +581,23 @@ async function main() {
 	.register(bot)
 
 
-	new Command("acl.from_list", async function(ctx) {
+	new Command("acl.fromdump", async function(ctx) {
 
-		let acl = await fs.readFile("acl.json")
-		acl = JSON.parse(acl)
-
-		let raid = await fs.readFile("../raid.json")
-		raid = JSON.parse(raid)
+		let acl = JSON.parse(await fs.readFile("acl.json", "utf8"))
+		let raid = JSON.parse(await fs.readFile("dump.json", "utf8"))
 
 		let hs = {}
 
 		for (let user_id of raid) {
 			hs[user_id.split(":")[1]] = true
 		}
+
+		for (let domain of acl.deny) {
+			hs[domain] = true
+		}
+
+		delete acl.deny
+		acl.deny = []
 
 		for (let domain in hs) {
 			acl.deny.push(domain)
@@ -604,8 +614,7 @@ async function main() {
 
 	new Command("acl.reload", async function(ctx) {
 
-		let data = await fs.readFile("acl.json")
-		data = JSON.parse(data)
+		let data = JSON.parse(await fs.readFile("acl.json", "utf8"))
 
 		for (let room_id in this.config.rooms) {
 			if (!this.config.rooms[room_id].manage) {
@@ -613,6 +622,24 @@ async function main() {
 			}
 			await this.api.v3_put_state(room_id, "m.room.server_acl", data)
 		}
+	})
+	.allow_console()
+	.allow_any_room()
+	.register(bot)
+
+
+	new Command("joinrule", async function(ctx) {
+		let room_id = ctx.event.room_id
+		let rule = ctx.argv[1]
+		if (rule != "public" && rule != "invite") {
+			ctx.reply(`Invalid argument ${rule}, use public or invite`)
+			return
+		}
+
+		const data = {
+			join_rule: rule
+		}
+		await this.api.v3_put_state(room_id, "m.room.join_rules", data)
 	})
 	.allow_console()
 	.allow_any_room()

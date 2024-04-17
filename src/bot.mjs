@@ -1,9 +1,10 @@
+// @ts-check
 "use strict";
 import fs from 'node:fs/promises'
 
 import { parse_command } from "./parse_command.mjs"
-import { Util } from "./utils.mjs"
-import { Command, CommandContext } from "./command.mjs"
+//import { Util } from "./utils.mjs"
+import { CommandContext } from "./command.mjs"
 
 import { MatrixAPI } from "./matrix-api.mjs"
 import { Database } from "./database.mjs"
@@ -12,9 +13,9 @@ import { Database } from "./database.mjs"
 async function import_history(db) {
 	console.log("Importing history ...")
 	const import_folder = "./history"
-	let dirs = await fs.readdir(import_folder, {withFileTypes:true});
+	let readdir = await fs.readdir(import_folder, {withFileTypes:true});
 
-	dirs = dirs.filter(dirent=>dirent.isDirectory()).map(dirent=>dirent.name)
+	let dirs = readdir.filter(dirent=>dirent.isDirectory()).map(dirent=>dirent.name)
 
 	let room_meta = {
 		_id: "rooms",
@@ -30,8 +31,7 @@ async function import_history(db) {
 		let last_event = null;
 
 		while (token) {
-			let page = await fs.readFile(`${import_folder}/${room}/${token}.json`)
-			page = JSON.parse(page)
+			let page = JSON.parse(await fs.readFile(`${import_folder}/${room}/${token}.json`, "utf8"))
 			event_count += page.chunk.length;
 			token = page.end;
 	
@@ -80,14 +80,16 @@ class Room {
 		return this.get_member(user_id);
 	}
 
+
+	/*
 	get displayname() {
-		/*
 		let name_event = room.state["m.room.name"]
 		let create_event = room.state["m.room.create"]
 		let alias_event = room.state["m.room.canonical_alias"]
-		*/
 	}
+	*/
 
+	/*
 	test(){
 			let room = this.rooms[room_id];
 
@@ -112,6 +114,7 @@ class Room {
 			
 			this.rooms[room_id].name = name
 	}
+	*/
 }
 
 class Member {
@@ -139,7 +142,7 @@ class Member {
 		return await this.bot.api.v3_ban(this.room_id, this.id, "")
 	}
 
-	get powerlevel() {
+	powerlevel() {
 		let event = this.bot.rooms[this.room_id].state["m.room.power_levels"]
 
 		if (!event) {
@@ -189,7 +192,7 @@ class Bot {
 
 		this.commands = {}
 		this.rooms = {}
-
+		this.exit = false
 	}
 
 	register_command(cmd){
@@ -201,7 +204,7 @@ class Bot {
 	}
 
 
-	run_command(argv, event=undefined) {
+	run_command(argv, event) {
 
 		let cmd = this.commands[argv[0]]
 		if(!cmd) {
@@ -237,7 +240,7 @@ class Bot {
 			let member = room.get_member(event.sender)
 
 				
-			if (cmd.filter.level > member.powerlevel) {
+			if (cmd.filter.level > member.powerlevel()) {
 				console.log("Insufficient power level")
 				return
 			}
@@ -369,7 +372,8 @@ class Bot {
 		if (!sync.rooms) return
 
 		let room_meta = await this.db.get_meta("rooms")
-
+		if (!room_meta) throw "No room meta" // TODO this is to shut up TS, investigate what's going on
+		
 		for (let room_id in sync.rooms.join) {
 
 			this.rooms[room_id] ??= {
@@ -492,7 +496,7 @@ class Bot {
 		let room = this.get_room(e.room_id)
 		let user = room.get_user(e.state_key)
 
-		console.log(`Power level: ${user.powerlevel}`)
+		console.log(`Power level: ${user.powerlevel()}`)
 
 		console.log("Join alert?")
 		if (e.content.membership != "join") 
@@ -507,6 +511,7 @@ class Bot {
 
 
 		let dbuser = await this.db.get_user(user.id);
+		if (!dbuser) throw("No dbuser") // TODO to shut up TS, investigate later
 
 		if (dbuser.onjoin === "mute") {
 			console.log("Muted due to .onjoin")
@@ -520,7 +525,7 @@ class Bot {
 			return
 		}
 
-		if (user.powerlevel != 0) 
+		if (user.powerlevel() != 0) 
 			return
 
 		console.log("Alert!")
@@ -554,6 +559,7 @@ class Bot {
 			return
 		}
 
+		if(true)
 		this.send_mention(room.id,
 			[user.id, this.config.owner_id],
 			this.config.gatekeep_mute_message
@@ -562,6 +568,7 @@ class Bot {
 
 	async sync_room(room_id) {
 		let room_meta = await this.db.get_meta("rooms")
+		if (!room_meta) throw("no room meta") // TODO to shut up TS, investigate later
 		let last_event = room_meta.rooms[room_id].last_event
 
 		let context = await this.api.v3_context(room_id, last_event, 50)
@@ -853,7 +860,7 @@ class Bot {
 
 
 	calc_trust(user){
-		let now = new Date()
+		let now = new Date().getTime();
 		user.trust = 0
 		let points = 0;
 		let reactions = 0
@@ -878,7 +885,7 @@ class Bot {
 		 * 10 - Max trust
 		 */
 
-		let days = (now - new Date(user.first_seen)) / 1000 / 60 / 60 / 24;
+		let days = (now - new Date(user.first_seen).getTime()) / 1000 / 60 / 60 / 24;
 		
 		user.points = points
 

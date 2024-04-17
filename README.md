@@ -9,9 +9,11 @@ which is a decentralized Slack/Discord-like messaging platform.
 This is not intended to be ran by anyone as-is, but can serve as an example on 
 how to implement a Matrix bot without relying on the offical SDKs. This repository implements its own lightweight 
 interface for [Matrix Client-Server HTTP API](https://spec.matrix.org/v1.9/client-server-api/), 
-in the `matrix-api.mjs` file. Not complete API coverage, but has full support for
+in the `matrix-api.mts` file. Not complete API coverage, but has full support for
 v2 sync, history via context api, room state, and all the relevant APIs for moderating a room and its users. 
 Notably, e2ee support is currently missing.
+
+Since 2024-04-17 this project is being migration to TypeScript.
 
 ## Database
 The bot uses MongoDB to store a complete copy of room event timelines, and 

@@ -1,17 +1,22 @@
+// @ts-check
 "use strict";
-import https from "https"
 import {Util} from "./utils.mjs"
-import fs from 'node:fs/promises'
+//import fs from 'node:fs/promises'
 
 import {
-	ReasonPhrases,
 	StatusCodes,
-	getReasonPhrase,
-	getStatusCode,
 } from 'http-status-codes';
 
 class MatrixAPI {
-	constructor(config) {
+	config: any;
+
+	txn: number;
+	sync_status: {
+		next: string,
+		timeout: number
+	}
+
+	constructor(config: any) {
 		this.txn = new Date().getTime();
 
 		this.sync_status = {
@@ -21,7 +26,7 @@ class MatrixAPI {
 		this.config = config
 	}
 
-	async v3_send(room_id, event_type, content) {
+	async v3_send(room_id:string, event_type:string, content:any) {
 		let txn = (this.txn++).toString();
 		let call = {
 			method: "PUT",
@@ -33,11 +38,10 @@ class MatrixAPI {
 		}
 		let body = JSON.stringify(content)
 		let ret = await this.request(call, body);
-		console.log(ret.body)
 		return JSON.parse(ret.body)
 	}
 
-	async v3_context(room_id, event_id, limit=10) {
+	async v3_context(room_id:string, event_id:string, limit=10) {
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/context/${event_id}?limit=${limit}`,
 			hostname:this.config.hostname,
@@ -45,13 +49,13 @@ class MatrixAPI {
 				Authorization: `Bearer ${this.config.accessToken}`
 			}
 		}
-		let ret = await this.request(call) 
+		let ret = await this.request(call, null) 
 		if(ret.code != 200) throw `Server responded with ${ret.code}`
 		let context = JSON.parse(ret.body)
 		return context
 	}
 
-	async v3_state(room_id, type) {
+	async v3_state(room_id:string, type:string) {
 		let opt = ""
 		if (type) {
 			opt = `/${type}`
@@ -63,14 +67,13 @@ class MatrixAPI {
 				Authorization: `Bearer ${this.config.accessToken}`
 			}
 		}
-		let ret = await this.request(call) 
+		let ret = await this.request(call, null) 
 		if(ret.code != 200) throw `Server responded with ${ret.code}`
 		let state = JSON.parse(ret.body)
-		//await fs.writeFile("./state.json", JSON.stringify(state, null, 4))
 		return state;
 	}
 
-	async v3_members(room_id, filter) {
+	async v3_members(room_id:string, filter:string) {
 		let opt = ""
 		if (filter) {
 			opt = `/${filter}`
@@ -82,14 +85,13 @@ class MatrixAPI {
 				Authorization: `Bearer ${this.config.accessToken}`
 			}
 		}
-		let ret = await this.request(call) 
+		let ret = await this.request(call, null) 
 		if(ret.code != 200) throw `Server responded with ${ret.code}`
 		let state = JSON.parse(ret.body)
-		//await fs.writeFile("./state.json", JSON.stringify(state, null, 4))
 		return state;
 	}
 
-	async v3_put_state(room_id, type, data) {
+	async v3_put_state(room_id:string, type:string, data:string) {
 		let call = {
 			method: "PUT",
 			path: `/_matrix/client/v3/rooms/${room_id}/state/${type}`,
@@ -104,7 +106,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_kick(room_id, user_id, reason) {
+	async v3_kick(room_id:string, user_id:string, reason:string) {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/kick`,
@@ -123,7 +125,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_ban(room_id, user_id, reason) {
+	async v3_ban(room_id:string, user_id:string, reason:string) {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/ban`,
@@ -142,7 +144,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_redact(room_id, event_id, reason) {
+	async v3_redact(room_id:string, event_id:string, reason:string) {
 		let txn = (this.txn++).toString();
 		let call = {
 			method: "PUT",
@@ -159,7 +161,7 @@ class MatrixAPI {
 	}
 
 
-	async v3_messages(room_id, token, limit=10) {
+	async v3_messages(room_id:string, token:string, limit=10) {
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/messages?limit=${limit}&from=${token}`,
 			hostname:this.config.hostname,
@@ -167,7 +169,7 @@ class MatrixAPI {
 				Authorization: `Bearer ${this.config.accessToken}`
 			}
 		}
-		let ret = await this.request(call) 
+		let ret = await this.request(call, null) 
 		if(ret.code != 200) throw `Server responded with ${ret.code}`
 		let context = JSON.parse(ret.body)
 		return context
@@ -190,7 +192,7 @@ class MatrixAPI {
 				Authorization: `Bearer ${this.config.accessToken}`
 			}
 		}
-		let ret;
+		let ret:any;
 		try {
 			ret = await Util.request(call) 
 		} catch(err) {
@@ -246,24 +248,24 @@ class MatrixAPI {
 	}
 
 
-	async request(options, body){
+	async request(options:any, body:any){
 
-		const first = new Date()
+		const first = new Date().getTime();
 		const err_out = 5 * 60 * 1000 
 		let retry = 0
 
-		let ret;
+		let ret:any;
 
 		while (true) {
 		
-			let now = new Date()
+			let now = new Date().getTime()
 			if (now - first > err_out) {
 				throw "Request failed after many retries"
 			}
 
 			if(retry) {
 				console.log(`Retrying request after ${retry**2} seconds...`)
-				await Util.sleep((retry**2) * 1000)
+				await Util.sleep((retry**2) * 2000)
 			}
 			retry++
 
@@ -277,6 +279,10 @@ class MatrixAPI {
 			}
 
 
+			if (ret.code == StatusCodes.TOO_MANY_REQUESTS) {
+				console.log(ret.body)
+				await Util.sleep(ret.retry_after_ms)
+			}
 			if (ret.code == StatusCodes.TOO_MANY_REQUESTS
 			||  ret.code == StatusCodes.REQUEST_TIMEOUT) {
 				console.log(`Server responded with ${ret.code} ${Util.status_phrase(ret.code)}`)

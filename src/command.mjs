@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 class CommandContext {
@@ -37,9 +38,6 @@ class Command {
 			}
 		}
 		return this
-	}
-	set_level(level) {
-		this.filter.level = level
 	}
 	allow_console() {
 		this.filter.console = true;

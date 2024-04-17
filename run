@@ -1,5 +1,5 @@
 #!/bin/sh
-node src/main.mjs
+node build/main.mjs
 chmod +x ./crashalert
 ./crashalert
 
