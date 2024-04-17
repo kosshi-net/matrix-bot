@@ -194,7 +194,7 @@ class MatrixAPI {
 		}
 		let ret:any;
 		try {
-			ret = await Util.request(call) 
+			ret = await Util.request(call, null) 
 		} catch(err) {
 			console.log(`Sync request failed, ${err}`)
 			ret = {code: StatusCodes.SERVICE_UNAVAILABLE} 

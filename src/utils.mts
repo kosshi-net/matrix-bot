@@ -2,17 +2,14 @@
 import https from "https"
 
 import {
-	ReasonPhrases,
-	StatusCodes,
 	getReasonPhrase,
-	getStatusCode,
 } from 'http-status-codes';
 
-function sleep(ms) {
+function sleep(ms:number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function statusPhrase(code) {
+function statusPhrase(code:number) {
 	let reason = "";
 	try {
 		reason = getReasonPhrase(code)
@@ -22,7 +19,7 @@ function statusPhrase(code) {
 	return reason
 }
 
-function request(options, body){
+function request(options:any, body:any){
 
 	return new Promise(function(resolve, reject){
 		let req = https.request(options, (r)=>{
@@ -43,7 +40,7 @@ function request(options, body){
 	})
 }
 
-function format_time(ms) {
+function format_time(ms:number) {
 
 	if (ms < 1000) {
 		return `${ms}ms`

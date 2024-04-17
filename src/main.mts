@@ -336,7 +336,6 @@ async function main() {
 	new Command("whitelist.tx", async function(ctx) {
 		let user_id = ctx.argv[1];
 		let tx = new Transaction(this.db)
-		await tx.start()
 		do {
 			let user = await tx.user(user_id)
 			console.log("User")
@@ -654,7 +653,7 @@ async function main() {
 
 		let argv = parse_command(ret)
 		console.log(argv)
-		bot.run_command(argv);
+		bot.run_command(argv, null);
 	}
 }
 

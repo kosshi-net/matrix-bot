@@ -66,6 +66,8 @@ async function import_history(db) {
 
 
 class Room {
+	bot:Bot;
+	id:string;
 	/* This a R/W interface on top of class Bot's JSON data */
 	constructor(bot, room_id){
 		this.bot = bot
@@ -118,6 +120,9 @@ class Room {
 }
 
 class Member {
+	bot:Bot;
+	room_id:string;
+	id:string;
 	constructor(bot, room_id, user_id){
 		this.bot = bot
 		this.room_id = room_id
@@ -180,6 +185,13 @@ class Member {
 
 
 class Bot {
+	config:any;
+	db:Database;
+	api:MatrixAPI;
+	var:any;
+	commands:any;
+	rooms:any;
+	exit:boolean;
 	constructor(config) {
 		this.config = config;
 		this.db = new Database(this.config);

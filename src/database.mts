@@ -1,14 +1,14 @@
 "use strict";
-import { MongoClient } from 'mongodb'
+import { MongoClient, Collection, Db, ClientSession} from 'mongodb'
 
 class Transaction {
-	constructor(db) {
+	db:Database;
+	session:ClientSession;
+	cache:any;
+	constructor(db:Database) {
 		this.db = db
-	}
-	
-	async start(){
 		this.session = this.db.client.startSession()
-		await this.session.startTransaction()
+		this.session.startTransaction()
 		this.reset_cache()
 	}
 
@@ -18,9 +18,9 @@ class Transaction {
 		}
 	}
 
-	async user(id) {
+	async user(id:string) {
 		if (!this.cache.user[id]) {
-			const query = {_id: id}
+			const query:any = {_id: id}
 			let ret = await this.db.users.findOne(query, {session:this.session})
 			if (ret) this.cache.user[id] = ret
 		}
@@ -65,7 +65,12 @@ class Transaction {
 }
 
 class Database {
-	constructor(config) {
+	client:MongoClient;
+	database:Db;
+	events: Collection;
+	users:  Collection;
+	meta:   Collection;
+	constructor(config:any) {
 		this.client = new MongoClient(config.db);
 		this.database = this.client.db("2023-06-16");
 		this.events = this.database.collection("events");
@@ -86,24 +91,24 @@ class Database {
 	 * Prefer the Transaction class over these functions!!!
 	 * */
 
-	async get_meta(name) {
-		const query = {_id: name};
+	async get_meta(name:string) {
+		const query:any = {_id: name};
 		let data = await this.meta.findOne(query)
 		return data
 	}
 
-	async put_meta(meta) {
-		const query = {_id: meta._id}
+	async put_meta(meta:any) {
+		const query:any = {_id: meta._id}
 		const result = await this.meta.updateOne(query, {$set: meta}, {upsert:true});
 	}
 
-	async get_user(name) {
-		const query = {_id: name};
+	async get_user(name:string) {
+		const query:any = {_id: name};
 		let data = await this.users.findOne(query)
 		return data
 	}
 
-	async put_user(meta) {
+	async put_user(meta:any) {
 		const query = {_id: meta._id}
 		const result = await this.users.updateOne(query, {$set: meta}, {upsert:true});
 	}
@@ -114,9 +119,9 @@ class Database {
 		return users
 	}
 
-	async get_event(room_id, event_id) {
+	async get_event(room_id:string, event_id:string) {
 		if (!room_id || !event_id) throw "Error: db.get_event requires two arguments."
-		const query = {
+		const query:any = {
 			_id: room_id+event_id
 		};
 
@@ -124,7 +129,7 @@ class Database {
 		return e
 	}
 
-	async new_event(e) {
+	async new_event(e:any) {
 		if (!e.room_id || !e.event_id) {
 			throw "Malformed event"
 		}

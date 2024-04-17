@@ -2,13 +2,17 @@
 "use strict";
 
 class CommandContext {
-	constructor(bot, argv, event) {
+	bot: any;
+	argv: Array<string>;
+	event: any;
+
+	constructor(bot:any, argv:Array<string>, event:any) {
 		this.bot = bot;
 		this.argv = argv;
 		this.event = event;
 	}
 
-	reply(msg) {
+	reply(msg:string) {
 		
 		if (this.event) {
 			this.bot.send_mention(
@@ -23,7 +27,12 @@ class CommandContext {
 }
 
 class Command {
-	constructor(name, fn) {
+	ready_on:number;
+	name:string;
+	fn:Function;
+	filter:any;
+
+	constructor(name:string, fn:Function) {
 		this.ready_on = 0
 		this.name  = name;
 		this.fn    = fn;
@@ -48,27 +57,27 @@ class Command {
 		return this
 	}
 
-	set_level(level) {
+	set_level(level:number) {
 		this.filter.level = level;
 		return this
 	}
 
-	allow_room(room){
+	allow_room(room:string){
 		this.filter.room[room] = true
 		return this
 	}
 
-	deny_room(room){
+	deny_room(room:string){
 		this.filter.room[room] = false
 		return this
 	}
 
-	allow_user(user){
+	allow_user(user:string){
 		this.filter.user[user] = true
 		return this
 	}
 
-	deny_user(user){
+	deny_user(user:string){
 		this.filter.user[user] = false
 		return this
 	}
@@ -90,7 +99,7 @@ class Command {
 		this.filter.user.any = false
 		return this
 	}
-	register(bot) {
+	register(bot:any) {
 		bot.register_command(this)
 		console.log(this)
 	}
