@@ -2,14 +2,13 @@
 "use strict";
 import fs from "node:fs/promises";
 
-import { parse_command } from "./parse_command.mjs";
 //import { Util } from "./utils.mjs"
-import { CommandContext } from "./command.mjs";
+import { CommandContext, CommandManager, Command } from "./command.mjs";
 
 import { MatrixAPI } from "./matrix-api.mjs";
 import { Database } from "./database.mjs";
 
-async function import_history(db) {
+async function import_history(db:Database) {
 	console.log("Importing history ...");
 	const import_folder = "./history";
 	let readdir = await fs.readdir(import_folder, { withFileTypes: true });
@@ -82,40 +81,6 @@ class Room {
 		return this.get_member(user_id);
 	}
 
-	/*
-	get displayname() {
-		let name_event = room.state["m.room.name"]
-		let create_event = room.state["m.room.create"]
-		let alias_event = room.state["m.room.canonical_alias"]
-	}
-	*/
-
-	/*
-	test(){
-			let room = this.rooms[room_id];
-
-			let name;
-
-			let name_event = room.state["m.room.name"]
-			let create_event = room.state["m.room.create"]
-			let alias_event = room.state["m.room.canonical_alias"]
-
-			name = name_event?.content?.name;
-
-			if (!name) 
-				name = alias_event?.content?.alias;
-
-			if (!name) 
-				name = create_event.sender;
-
-			if (create_event.content.type == "m.space")
-				console.log(`${name} (Space)`)
-			else
-				console.log(name)
-			
-			this.rooms[room_id].name = name
-	}
-	*/
 }
 
 class Member {
@@ -126,6 +91,12 @@ class Member {
 		this.bot = bot;
 		this.room_id = room_id;
 		this.id = user_id;
+	}
+
+	is_banned() {
+		let event = this.bot.rooms[this.room_id].member[this.id];
+		if (!event) return false;
+		return event.content?.membership === "ban";
 	}
 
 	is_member() {
@@ -140,6 +111,11 @@ class Member {
 
 	async kick() {
 		return await this.bot.api.v3_kick(this.room_id, this.id, "");
+	}
+
+
+	async unban() {
+		return await this.bot.api.v3_unban(this.room_id, this.id, "");
 	}
 
 	async ban() {
@@ -164,7 +140,7 @@ class Member {
 		return level;
 	}
 
-	async set_powerlevel(level) {
+	async set_powerlevel(level:number) {
 		let levels = await this.bot.api.v3_state(
 			this.room_id,
 			"m.room.power_levels",
@@ -193,25 +169,37 @@ class Bot {
 	config: any;
 	db: Database;
 	api: MatrixAPI;
-	var: any;
-	commands: any;
 	rooms: any;
 	exit: boolean;
+	var: {
+		_counter: number,
+		unsynced: boolean,
+		joins: {
+			rooms: {
+				[index:string] : {
+					list:Array<string>,
+					count: number
+				} 
+			},
+			timeout: any, /* For join alert */
+		}
+	}
+	
+	cmd:CommandManager;
 
-	constructor(config) {
+	constructor(config:any) {
 		this.config = config;
 		this.db = new Database(this.config);
 		this.api = new MatrixAPI(this.config);
+		this.cmd = new CommandManager(this);
 
 		this.var = {
 			_counter: 0,
 			unsynced: true,
-
 			joins: {
 				rooms:{},
-				timeout: 0 /* For join alert */
+				timeout: 0 
 			}
-
 		};
 
 		
@@ -220,9 +208,7 @@ class Bot {
 			1000 * 60 // Minute
 			* 60
 		);
-		
 
-		this.commands = {};
 		this.rooms = {};
 		this.exit = false;
 	}
@@ -236,65 +222,6 @@ class Bot {
 		}
 	}
 
-	register_command(cmd) {
-		this.commands[cmd.name] = cmd;
-	}
-
-	unregister_command(name) {
-		delete this.commands[name];
-	}
-
-	run_command(argv, event) {
-		let cmd = this.commands[argv[0]];
-		if (!cmd) {
-			console.log(`No such command: ${argv[0]}`);
-			return 1;
-		}
-
-		if (!event && cmd.filter.console == false) {
-			console.log("This command cannot be run on the console.");
-			return 1;
-		}
-
-		if (event) {
-			if (cmd.filter.room[event.room_id] === false) {
-				console.log("No run because room explictly denied");
-				return;
-			}
-
-			if (
-				cmd.filter.room[event.room_id] !== true &&
-				cmd.filter.room.any == false
-			) {
-				console.log("Not whitelisted");
-				return;
-			}
-
-			/*if (event.sender != this.config.owner_id) {
-				console.log("Not owner")
-				return
-			}*/
-
-			let room = this.get_room(event.room_id);
-			let member = room.get_member(event.sender);
-
-			if (cmd.filter.level > member.powerlevel()) {
-				console.log("Insufficient power level");
-				return;
-			}
-		}
-
-		let ctx = new CommandContext(this, argv, event);
-
-		/*
-		if (event && event.content.format == "org.matrix.custom.html") {
-			ctx.reply("Message format not supported");
-			return 1
-		}
-		*/
-
-		cmd.fn.bind(this)(ctx);
-	}
 
 	async close() {
 		await this.db.close();
@@ -363,9 +290,9 @@ class Bot {
 				e.content?.msgtype == "m.text" &&
 				e.content?.body[0] == "!"
 			) {
-				let argv = parse_command(e.content.body.substring(1));
-				console.log("Running command ", argv);
-				this.run_command(argv, e);
+				console.log(`Running command ${e.content.body}`);
+				//this.run_command(argv, e);
+				this.cmd.run(e)
 			}
 
 			if (e.type == "m.room.member") {
@@ -519,6 +446,31 @@ class Bot {
 		return room;
 	}
 
+	get_alias(room_id:string):string {
+		let room = this.rooms[room_id];
+		let e = room.state["m.room.canonical_alias"];
+		
+		let alias = e?.content?.alias
+		if(alias) 
+			return alias
+		else 
+			return room_id
+	}
+
+	resolve_room(alias:string): string {
+		if (alias[0] == "!") return alias;
+		for (let room_id in this.rooms) {
+			let room = this.rooms[room_id];
+			let e = room.state["m.room.canonical_alias"];
+			if (e?.content?.alias == alias) {
+				console.log(`Resolved ${alias} as ${room_id}`)
+				return room_id;
+			}
+		}
+
+		console.log(`Failed to resolve ${alias}`)
+		return "";
+	}
 
 
 	async join_alert(e) {

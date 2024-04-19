@@ -4,7 +4,9 @@ import { MongoClient, Collection, Db, ClientSession } from "mongodb";
 class Transaction {
 	db: Database;
 	session: ClientSession;
-	cache: any;
+	cache: {
+		user: any
+	};
 	constructor(db: Database) {
 		this.db = db;
 		this.session = this.db.client.startSession();
@@ -13,9 +15,7 @@ class Transaction {
 	}
 
 	reset_cache() {
-		this.cache = {
-			user: {},
-		};
+		this.cache = {user: {}};
 	}
 
 	async user(id: string) {

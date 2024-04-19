@@ -123,6 +123,25 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
+	async v3_unban(room_id: string, user_id: string, reason: string) {
+		let call = {
+			method: "POST",
+			path: `/_matrix/client/v3/rooms/${room_id}/unban`,
+			hostname: this.config.hostname,
+			headers: {
+				Authorization: `Bearer ${this.config.accessToken}`,
+			},
+		};
+
+		let body = JSON.stringify({
+			reason: reason,
+			user_id: user_id,
+		});
+
+		let ret = await this.request(call, body);
+		return JSON.parse(ret.body);
+	}
+
 	async v3_ban(room_id: string, user_id: string, reason: string) {
 		let call = {
 			method: "POST",
