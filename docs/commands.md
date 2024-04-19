@@ -8,14 +8,14 @@ help                                         50    Prints help.
 ping                                         1*    Pong!
 
 # Moderaion commands
-level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
+level [#rooms..] <@users..> [number]         90    Set or get user powerlevels.
 redact [#rooms..] <@users>                   50    Redacts user's avatar and displayname.
 kick [#rooms..] <@users..>                   50    Kick user from target rooms.
 mute [#rooms..] <@users>                     50    Mute user in target rooms.
 ban <@users..>                               50    Ban user from all managed rooms.
 whitelist <@users..>                         50    Whitelists users (sets database.onjoin to "whitelist")
 unban <@users..>                             50    Unban user in all managed rooms. You must run this only after !whitelist.
-joinrule [#rooms..] <public|invite>          100   Sets room to public or invite-only.
+joinrule [#rooms..] <public|invite>          50    Sets room to public or invite-only.
 
 # ACL commands
 acl <homeserver>                             100   Write homeserver to deny field of acl.json
@@ -49,6 +49,9 @@ user targets will run on the user issuing the command, if none was given.
 
 Note: the `:domain.org` is omitted from IDs in these examples, but is required in practice.
 
+## Macros
+Currently implemented macros: 
+* `#all` Expands to all managed rooms
 
 ## Editing this file
 This file is generated from `main.mts` and `command.mts`, when the bot is ran 

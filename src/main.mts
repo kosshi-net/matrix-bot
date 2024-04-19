@@ -108,7 +108,7 @@ async function main() {
 		}
 	})
 	.set_description("Set or get user powerlevels.")
-	.set_level(50)
+	.set_level(90)
 	.allow_any_room()
 	.register(bot.cmd);
 
@@ -259,6 +259,7 @@ async function main() {
 		})
 	})
 	.set_description(`Sets room to public or invite-only.`)
+	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
 
@@ -423,6 +424,9 @@ user targets will run on the user issuing the command, if none was given.
 
 Note: the ':domain.org' is omitted from IDs in these examples, but is required in practice.
 
+## Macros
+Currently implemented macros: 
+* '#all' Expands to all managed rooms
 
 ## Editing this file
 This file is generated from 'main.mts' and 'command.mts', when the bot is ran 
