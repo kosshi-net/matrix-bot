@@ -1,7 +1,7 @@
 # Matrix room management bot 
 
 This is a personal project which I've published as a demonstration of my more 
-recent Javascript/Node.js projects utilizing MongoBD. 
+recent Javascript/TypeScript projects utilizing MongoBD. 
 
 This is deployed to manage rooms I run on [Matrix](https://matrix.org),
 which is a decentralized Slack/Discord-like messaging platform. 
@@ -13,7 +13,7 @@ in the `matrix-api.mts` file. Not complete API coverage, but has full support fo
 v2 sync, history via context api, room state, and all the relevant APIs for moderating a room and its users. 
 Notably, e2ee support is currently missing.
 
-Since 2024-04-17 this project is being migration to TypeScript.
+Since 2024-04-17 this project is being migrated to TypeScript.
 
 ## Commands and usage
 See [docs/commands.md](./docs/commands.md)
