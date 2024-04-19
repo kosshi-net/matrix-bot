@@ -2,14 +2,25 @@ import { Bot } from "./bot.mjs";
 import { parse_command } from "./parse_command.mjs";
 import { parse, TextNode, HTMLElement } from "node-html-parser";
 
+const doc_col_1 = 45
 
 class Command {
 	ready_on: number;
 	name: string;
 	usage: string;
 	fn: Function;
-	filter: any;
 	description: string;
+
+	filter: {
+		level:number,
+		console:boolean,
+		room : {
+			[index:string]: boolean,
+		}
+		user : {
+			[index:string]: boolean,
+		}
+	};
 
 	constructor(usage: string, fn: (this:Bot, ctx:CommandContext)=>Promise<void>) {
 		this.ready_on = 0;
@@ -113,6 +124,7 @@ class CommandContext {
 			user_id: []
 		}
 		this.parse(event)
+		this.expand_macros()
 	}
 
 
@@ -162,7 +174,24 @@ class CommandContext {
 		if (this.target.room_id.length == 0 && event) {
 			this.target.room_id.push(event.room_id);
 		}
+	}
 
+	expand_macros(){
+		let list = [];
+
+		for (let macro of this.target.room_id) {
+			switch (macro) {
+				case "#all":
+					for (let room_id in this.bot.config.rooms) {
+						list.push(room_id)
+					}
+					break;
+				default:
+					list.push(macro)
+					break;
+			}
+		}
+		this.target.room_id = list;
 	}
 
 	async for_rooms( callback:(room_id:string)=>Promise<void> ){
@@ -209,17 +238,29 @@ class CommandManager {
 		this.cmd = new Map<string, Command>();
 		this.md = ""
 
-		this.md += "\n\n"
-		this.md += "```\n";
-		this.md += `${"Command".padEnd(45)}${"LVL".padEnd(6)}${"Description"}\n`
+		this.md += `${"Command".padEnd(doc_col_1)}${"LVL".padEnd(6)}${"Description"}\n`
 
 	}
 	
 	register(cmd:Command) {
 		this.cmd.set(cmd.name, cmd)
 
-		this.md += `${cmd.usage.padEnd(45)}`
-		this.md += `${cmd.filter.level.toString().padEnd(6)}`
+		let lvltxt = cmd.filter.level.toString();
+
+		this.md += `${cmd.usage.padEnd(doc_col_1)}`
+		if (cmd.filter.room.any) {
+			this.md += `${lvltxt.padEnd(6)}`
+		} else {
+			let cli_only = true 
+			for (let id in cmd.filter.room) {
+				if (cmd.filter.room[id] === true) cli_only = false
+			}
+
+			if (cli_only)
+				this.md += `${"cli".padEnd(6)}`
+			else
+				this.md += `${(lvltxt+"*").padEnd(6)}`
+		}
 		this.md += `${cmd.description}\n`
 	}
 

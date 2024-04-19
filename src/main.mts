@@ -32,23 +32,15 @@ async function main() {
 
 	bot.cmd.md += "\n# General commands\n"
 
+	let help = "";
 
 	new Command("help", async function (this:Bot, ctx:CommandContext) {
 		let body = "Usage:\n<pre><code>";
 
-		this.cmd.cmd.forEach((cmd:Command)=>{
-			
-			body += `${cmd.usage}\n`;
-			body += `Req. level: ${cmd.filter.level}\n`;
-			body += `Description: ${cmd.description}\n`;
-			body += `\n`
-
-		});
-		body+="</code></pre>"
 		
-		body = body.replace("<", "&lt;").replace(">", "&gt;")
+		body = help.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
-		ctx.reply(body)
+		ctx.reply('<pre><code>'+body+"</pre></code>")
 
 	})
 	.set_description("Prints help.")
@@ -88,8 +80,8 @@ async function main() {
 		if (ctx.argv.length == 2) {
 			level = parseInt(ctx.argv[1]);
 
-			if (level === null || isNaN(level) || level > 50 || level < -50) {
-				console.log("Invalid level ${level}");
+			if (level === null || isNaN(level) || level > 95 || level < -50) {
+				ctx.reply("Invalid level ${level}");
 				return;
 			}
 
@@ -266,6 +258,7 @@ async function main() {
 			await this.api.v3_put_state(room_id, "m.room.join_rules", data);
 		})
 	})
+	.set_description(`Sets room to public or invite-only.`)
 	.allow_any_room()
 	.register(bot.cmd);
 
@@ -359,7 +352,7 @@ async function main() {
 			}
 		});
 	})
-	.set_description("(DEBUG ONLY) Print user's database document, or specific field.")
+	.set_description("(DEBUG ONLY) Print user's database document, or a specific field of it.")
 	.set_level(90)
 	.allow_any_room()
 	.register(bot.cmd);
@@ -373,8 +366,7 @@ async function main() {
 		ctx.reply("\n<pre><code>" + JSON.stringify(context, null, 4)+"</pre></code>");
 	})
 	.set_description("(DEBUG ONLY) Prints internal command context.")
-	.deny_any_room()
-	.allow_any_user()
+	.allow_any_room()
 	.register(bot.cmd);
 
 	new Command("eval <code>", async function (ctx:CommandContext) {
@@ -389,6 +381,11 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
+	new Command("cli-only", async function (_:CommandContext) {
+	})
+	.set_description("(DEBUG ONLY) NO-OP")
+	.register(bot.cmd);
+
 
 	/*
 	______                                      _        _   _             
@@ -399,6 +396,10 @@ async function main() {
 	|___/ \___/ \___|\__,_|_| |_| |_|\___|_| |_|\__\__,_|\__|_|\___/|_| |_|
 																		   
 	*/
+
+   bot.cmd.md += "\n* Available only in specific rooms"
+	help = bot.cmd.md;
+	bot.cmd.md = "\n\n```md\n" + bot.cmd.md;
 
 
 	bot.cmd.md += "\n```\n";

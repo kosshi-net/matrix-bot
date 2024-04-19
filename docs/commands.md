@@ -1,11 +1,11 @@
 
 
-```
+```md
 Command                                      LVL   Description
 
 # General commands
 help                                         50    Prints help.
-ping                                         1     Pong!
+ping                                         1*    Pong!
 
 # Moderaion commands
 level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
@@ -15,6 +15,7 @@ mute [#rooms..] <@users>                     50    Mute user in target rooms.
 ban <@users..>                               50    Ban user from all managed rooms.
 whitelist <@users..>                         50    Whitelists users (sets database.onjoin to "whitelist")
 unban <@users..>                             50    Unban user in all managed rooms. You must run this only after !whitelist.
+joinrule [#rooms..] <public|invite>          100   Sets room to public or invite-only.
 
 # ACL commands
 acl <homeserver>                             100   Write homeserver to deny field of acl.json
@@ -22,10 +23,12 @@ acl.reload                                   100   Load acl.json to all managed 
 
 # Debug commands
 db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from database.
-db.get_user <@users..> [field]               90    (DEBUG ONLY) Print user's database document, or specific field.
+db.get_user <@users..> [field]               90    (DEBUG ONLY) Print user's database document, or a specific field of it.
 testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal command context.
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
+cli-only                                     cli   (DEBUG ONLY) NO-OP
 
+* Available only in specific rooms
 ```
 
 ## Command targets
