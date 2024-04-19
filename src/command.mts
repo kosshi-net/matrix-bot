@@ -11,7 +11,7 @@ class Command {
 	filter: any;
 	description: string;
 
-	constructor(usage: string, fn: Function) {
+	constructor(usage: string, fn: (this:Bot, ctx:CommandContext)=>Promise<void>) {
 		this.ready_on = 0;
 		this.usage = usage;
 		this.name = usage.split(" ")[0];
@@ -37,7 +37,6 @@ class Command {
 		return this;
 	}
 /*  
-	
 	Disabled for now, unclear if necessary
 
 	allow_console() {
@@ -119,7 +118,6 @@ class CommandContext {
 
 	parse(event:any) {
 	   let text:Array<string> = [];
-
 
 		if (event.content.format == "org.matrix.custom.html") {
 			const root = parse(event.content.formatted_body);
@@ -204,13 +202,25 @@ class CommandManager {
 	bot:Bot;
 	cmd: Map<string, Command>;
 
+	md: string;
+
 	constructor(bot:Bot) {
 		this.bot = bot;
-		this.cmd = new Map<string, Command>()
+		this.cmd = new Map<string, Command>();
+		this.md = ""
+
+		this.md += "\n\n"
+		this.md += "```\n";
+		this.md += `${"Command".padEnd(45)}${"LVL".padEnd(6)}${"Description"}\n`
+
 	}
 	
 	register(cmd:Command) {
 		this.cmd.set(cmd.name, cmd)
+
+		this.md += `${cmd.usage.padEnd(45)}`
+		this.md += `${cmd.filter.level.toString().padEnd(6)}`
+		this.md += `${cmd.description}\n`
 	}
 
 	run(event:any) {
@@ -254,9 +264,6 @@ class CommandManager {
 
 		cmd.fn.bind(this.bot)(ctx);
 	}
-
-
-
 }
 
 export { Command, CommandContext, CommandManager };

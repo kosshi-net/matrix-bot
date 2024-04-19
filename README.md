@@ -15,6 +15,9 @@ Notably, e2ee support is currently missing.
 
 Since 2024-04-17 this project is being migration to TypeScript.
 
+## Commands and usage
+See [docs/commands.md](./docs/commands.md)
+
 ## Database
 The bot uses MongoDB to store a complete copy of room event timelines, and 
 maintains statistics about participating users.
@@ -96,8 +99,6 @@ Below is an example `config.json`. The real one is .gitignored
 
 ```
 
-### Commands
-Defined in `main.js`
 
 ### User trust
 The bot uses gathered statistics to determine the "trust level" of users. This 
