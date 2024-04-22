@@ -217,6 +217,7 @@ class MatrixAPI {
 
 		if (ret.code != StatusCodes.OK) {
 			console.log(`Sync ${ret.code} ${Util.status_phrase(ret.code)}`);
+			console.log(ret.body);
 		}
 
 		if (
@@ -239,7 +240,10 @@ class MatrixAPI {
 			return {};
 		}
 
-		if (ret.code == StatusCodes.BAD_REQUEST) {
+		/* TODO What on earth causes 409 CONFLICT in sync? Seems undocumented.*/
+		if (ret.code == StatusCodes.BAD_REQUEST || 
+			ret.code == StatusCodes.CONFLICT 
+		) {
 			/* Reset token and try again. If no token to reset, throw */
 
 			if (this.sync_status.next) {
@@ -259,7 +263,6 @@ class MatrixAPI {
 
 		this.sync_status.timeout = 4000;
 
-		//await fs.writeFile("sync.json", JSON.stringify(sync, null, 4))
 
 		return data;
 	}
@@ -315,10 +318,8 @@ class MatrixAPI {
 				);
 				continue;
 			}
-
 			break;
 		}
-
 		return ret;
 	}
 }
