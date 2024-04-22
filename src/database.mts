@@ -1,4 +1,3 @@
-"use strict";
 import { MongoClient, Collection, Db, ClientSession } from "mongodb";
 
 class Transaction {

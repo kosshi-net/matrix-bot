@@ -1,6 +1,4 @@
-"use strict";
 import https from "https";
-
 import { getReasonPhrase } from "http-status-codes";
 
 function sleep(ms: number) {

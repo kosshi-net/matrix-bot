@@ -1,5 +1,3 @@
-// @ts-check
-"use strict";
 import fs from "node:fs/promises";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
@@ -36,12 +34,8 @@ async function main() {
 
 	new Command("help", async function (this:Bot, ctx:CommandContext) {
 		let body = "Usage:\n<pre><code>";
-
-		
 		body = help.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-
 		ctx.reply('<pre><code>'+body+"</pre></code>")
-
 	})
 	.set_description("Prints help.")
 	.allow_any_room()
@@ -71,7 +65,6 @@ async function main() {
 	 */
 
 	bot.cmd.md += "\n# Moderaion commands\n"
-
 
 	new Command("level [#rooms..] <@users..> [number]", async function (this:Bot, ctx:CommandContext) 
 	{

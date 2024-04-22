@@ -1,3 +1,4 @@
+// @ts-check
 "use strict";
 
 function is_whitespace(input) {

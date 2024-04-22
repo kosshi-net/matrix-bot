@@ -1,5 +1,3 @@
-// @ts-check
-"use strict";
 import fs from "node:fs/promises";
 
 //import { Util } from "./utils.mjs"

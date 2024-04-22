@@ -1,8 +1,4 @@
-// @ts-check
-"use strict";
 import { Util } from "./utils.mjs";
-//import fs from 'node:fs/promises'
-
 import { StatusCodes } from "http-status-codes";
 
 class MatrixAPI {
