@@ -66,7 +66,7 @@ class Room {
 	bot: Bot;
 	id: string;
 	/* This a R/W interface on top of class Bot's JSON data */
-	constructor(bot, room_id) {
+	constructor(bot:Bot, room_id:string) {
 		this.bot = bot;
 		this.id = room_id;
 	}
@@ -77,6 +77,18 @@ class Room {
 
 	get_user(user_id) {
 		return this.get_member(user_id);
+	}
+
+	get_all_memberships(): Map<string, string> {
+		console.log("!!!! TESTING ", this.id);
+		let membership = new Map<string, string>;
+		for (let key in this.bot.rooms[this.id].member) {
+			let e = this.bot.rooms[this.id].member[key];
+			console.log(e);
+			membership.set(e.state_key, e.content.membership);
+		}
+		
+		return membership;
 	}
 
 }
@@ -913,6 +925,7 @@ class Bot {
 
 		return user;
 	}
+
 }
 
 export { Bot, Room, Member };

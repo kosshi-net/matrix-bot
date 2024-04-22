@@ -78,8 +78,8 @@ async function main() {
 				return;
 			}
 
-			for (let room_alias of ctx.target.room_id) {
-				let room_id = this.resolve_room(room_alias);
+			for (let alias of ctx.target.room) {
+				let room_id = this.resolve_room(alias.id);
 				if (!room_id) continue;
 
 				let state_event = await this.api.v3_state(room_id, "m.room.power_levels");
@@ -420,6 +420,11 @@ Note: the ':domain.org' is omitted from IDs in these examples, but is required i
 ## Macros
 Currently implemented macros: 
 * '#all' Expands to all managed rooms
+* '@banned' Expands to all banned users in a room
+* '@level=<number>' Expands to all users at a specific power level in a room
+
+Commands for user macros will be ran only in the rooms where the condition is 
+true.
 
 ## Editing this file
 This file is generated from 'main.mts' and 'command.mts', when the bot is ran 
