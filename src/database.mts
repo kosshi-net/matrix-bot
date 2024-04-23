@@ -63,7 +63,7 @@ class Transaction {
 			}
 		}
 
-		this.session.endSession();
+		await this.session.endSession();
 		return false;
 	}
 }

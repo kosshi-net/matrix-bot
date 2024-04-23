@@ -13,6 +13,8 @@ const Chartype = {
 };
 
 class StringParser {
+	index: number;
+	str: string;
 	constructor(str) {
 		this.str = str.trim();
 		this.index = 0;
@@ -24,7 +26,8 @@ class StringParser {
 			case Chartype.Quote:
 			case Chartype.QuoteDouble:
 				return true;
-				defaut: return false;
+			default: 
+				return false;
 		}
 	}
 

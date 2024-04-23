@@ -1,9 +1,7 @@
-// @ts-check
-
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import parserTs from '@typescript-eslint/parser'
-import stylisticJs from '@stylistic/eslint-plugin-js'
+import parserTs from '@typescript-eslint/parser';
+import stylisticJs from '@stylistic/eslint-plugin-js';
 
 export default tseslint.config({
 	languageOptions: {
@@ -20,8 +18,11 @@ export default tseslint.config({
 		...tseslint.configs.recommended,
 	],
 	rules: {
-		"prefer-const": 'off',
+		"no-constant-condition": "warn",
+		"prefer-const": "off",
+		"@typescript-eslint/no-unused-vars": "off",
 		"@typescript-eslint/no-floating-promises": "error",
 		"@stylistic/js/semi": "error",
+		"@typescript-eslint/no-explicit-any": "warn",
 	}
 });

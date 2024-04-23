@@ -28,14 +28,14 @@ async function main() {
 
 	*/                                                      
 
-	bot.cmd.md += "\n# General commands\n"
+	bot.cmd.md += "\n# General commands\n";
 
 	let help = "";
 
 	new Command("help", async function (this:Bot, ctx:CommandContext) {
 		let body = "Usage:\n<pre><code>";
 		body = help.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-		ctx.reply('<pre><code>'+body+"</pre></code>")
+		await ctx.reply('<pre><code>'+body+"</pre></code>");
 	})
 	.set_description("Prints help.")
 	.allow_any_room()
@@ -44,7 +44,7 @@ async function main() {
 
 
 	new Command("ping", async function (this:Bot, ctx:CommandContext) {
-		ctx.reply("Pong!");
+		await ctx.reply("Pong!");
 	})
 	.set_description("Pong!")
 	.deny_any_room()
@@ -64,7 +64,7 @@ async function main() {
                                                      
 	 */
 
-	bot.cmd.md += "\n# Moderaion commands\n"
+	bot.cmd.md += "\n# Moderaion commands\n";
 
 	new Command("level [#rooms..] <@users..> [number]", async function (this:Bot, ctx:CommandContext) 
 	{
@@ -74,7 +74,7 @@ async function main() {
 			level = parseInt(ctx.argv[1]);
 
 			if (level === null || isNaN(level) || level > 95 || level < -50) {
-				ctx.reply("Invalid level ${level}");
+				await ctx.reply("Invalid level ${level}");
 				return;
 			}
 
@@ -96,7 +96,7 @@ async function main() {
 				let member = this.get_member(room_id, user_id);
 				let level = member.powerlevel();
 				let body = `${this.get_alias(room_id)} ${user_id} = ${level}`;
-				await ctx.reply(body)
+				await ctx.reply(body);
 			});
 		}
 	})
@@ -112,14 +112,14 @@ async function main() {
 			let member = new Member(this, room_id, user_id);
 
 			if (!member.is_member()) {
-				ctx.reply("Invalid user!");
+				await ctx.reply("Invalid user!");
 				return;
 			}
 
 			let redact_id = member.member_event().event_id;
 			await this.api.v3_redact(room_id, redact_id, "");
 
-			ctx.reply(`User ${user_id} redacted`);
+			await ctx.reply(`User ${user_id} redacted`);
 		});
 	})
 	.set_description("Redacts user's avatar and displayname.")
@@ -147,7 +147,7 @@ async function main() {
 			if (member.is_member()) {
 				await member.set_powerlevel(-1);
 			}
-		})
+		});
 	})
 	.set_description("Mute user in target rooms.")
 	.set_level(50)
@@ -165,8 +165,8 @@ async function main() {
 				console.log("User");
 				console.log(user);
 				if (!user) {
-					ctx.reply("Invalid user!");
-					tx.abort();
+					await ctx.reply("Invalid user!");
+					await tx.abort();
 					return;
 				}
 				user.onjoin = "ban";
@@ -196,8 +196,8 @@ async function main() {
 				console.log("User");
 				console.log(user);
 				if (!user) {
-					ctx.reply("Invalid user!");
-					tx.abort();
+					await ctx.reply("Invalid user!");
+					await tx.abort();
 					return;
 				}
 				user.onjoin = "whitelist";
@@ -240,7 +240,7 @@ async function main() {
 	{
 		let rule = ctx.argv[1];
 		if (rule != "public" && rule != "invite") {
-			ctx.reply(`Invalid argument ${rule}, use public or invite`);
+			await ctx.reply(`Invalid argument ${rule}, use public or invite`);
 			return;
 		}
 		await ctx.for_rooms(async (room_id:string)=>
@@ -249,7 +249,7 @@ async function main() {
 				join_rule: rule,
 			};
 			await this.api.v3_put_state(room_id, "m.room.join_rules", data);
-		})
+		});
 	})
 	.set_description(`Sets room to public or invite-only.`)
 	.set_level(50)
@@ -268,13 +268,13 @@ async function main() {
 	Server Access Control List
 	*/
 
-	bot.cmd.md += "\n# ACL commands\n"
+	bot.cmd.md += "\n# ACL commands\n";
 
 	// TODO store ACL in database?
 	new Command("acl <homeserver>", async function (this:Bot, ctx:CommandContext)
 	{
 		if (!ctx.argv[1]) {
-			ctx.reply("Homeserver required");
+			await ctx.reply("Homeserver required");
 			return;
 		}
 
@@ -283,7 +283,7 @@ async function main() {
 		acl.deny.push(ctx.argv[1]);
 
 		await fs.writeFile("acl.json", JSON.stringify(acl, null, 4));
-		ctx.reply(`${ctx.argv[1]} added to ACL`);
+		await ctx.reply(`${ctx.argv[1]} added to ACL`);
 	})
 	.set_description(`Write homeserver to deny field of acl.json`)
 	.allow_any_room()
@@ -314,17 +314,17 @@ async function main() {
 							   __/ |                           
 							  |___/                            
 	*/
-	bot.cmd.md += "\n# Debug commands\n"
+	bot.cmd.md += "\n# Debug commands\n";
 
 	new Command("db.forget_user <@users..>", async function (this:Bot, ctx:CommandContext) {
-		ctx.for_users(async (user_id:string)=>{
+		await ctx.for_users(async (user_id:string)=>{
 			let user = await this.db.get_user(user_id);
 			if (!user) {
-				ctx.reply(`Invalid user ${user_id}`);
+				await ctx.reply(`Invalid user ${user_id}`);
 			}
 			user = { _id: user._id };
 			await this.db.put_user(user);
-			ctx.reply(`Dropped ${user_id}`);
+			await ctx.reply(`Dropped ${user_id}`);
 		});
 	})
 	.set_description("(DEBUG ONLY) Drops user from database.")
@@ -337,12 +337,12 @@ async function main() {
 		await ctx.for_users(async (user_id:string)=>{
 			let user = await this.db.get_user(user_id);
 			if (!user) {
-				ctx.reply(`Invalid user ${user_id}`);
+				await ctx.reply(`Invalid user ${user_id}`);
 			}
 			if (field) {
-				ctx.reply("<pre></code>"+JSON.stringify(user[field], null, 4)+"</pre></code>");
+				await ctx.reply("<pre></code>"+JSON.stringify(user[field], null, 4)+"</pre></code>");
 			} else {
-				ctx.reply("<pre></code>"+JSON.stringify(user, null, 4)+"</pre></code>");
+				await ctx.reply("<pre></code>"+JSON.stringify(user, null, 4)+"</pre></code>");
 			}
 		});
 	})
@@ -356,8 +356,8 @@ async function main() {
 			target: ctx.target,
 			argv: ctx.argv,
 			event:ctx.event,
-		}
-		ctx.reply("\n<pre><code>" + JSON.stringify(context, null, 4)+"</pre></code>");
+		};
+		await ctx.reply("\n<pre><code>" + JSON.stringify(context, null, 4)+"</pre></code>");
 	})
 	.set_description("(DEBUG ONLY) Prints internal command context.")
 	.allow_any_room()
@@ -380,7 +380,7 @@ async function main() {
 		try {
 			eval(ctx.argv[1]);
 		} catch (e) {
-			ctx.reply(`${e}`);
+			await ctx.reply(`${e}`);
 		}
 	})
 	.set_level(100)
@@ -399,7 +399,7 @@ async function main() {
 																		   
 	*/
 
-   bot.cmd.md += "\n* Available only in specific rooms"
+   bot.cmd.md += "\n* Available only in specific rooms";
 	help = bot.cmd.md;
 	bot.cmd.md = "\n\n```md\n" + bot.cmd.md;
 
@@ -437,12 +437,12 @@ true.
 ## Editing this file
 This file is generated from 'main.mts' and 'command.mts', when the bot is ran 
 using "MAKE_DOCS=1" environment variable. Do not edit this file directly. 
-`.replaceAll("'", "`")
+`.replaceAll("'", "`");
 
 	if (process.env.MAKE_DOCS == "1") {
-		console.log("Generate docs")
-		await fs.writeFile("docs/commands.md", bot.cmd.md)
-		process.exit(0)
+		console.log("Generate docs");
+		await fs.writeFile("docs/commands.md", bot.cmd.md);
+		process.exit(0);
 	}
 
 	/*
@@ -458,14 +458,14 @@ using "MAKE_DOCS=1" environment variable. Do not edit this file directly.
 
 	await bot.init();
 	//await bot.build_user_db()
-	bot.sync();
+	await bot.sync();
 
 	while (!bot.exit) {
 		const ret = await rl.question("/");
 
 		let argv = parse_command(ret);
 		console.log(argv);
-		console.log("Executing commands on console disabled for now")
+		console.log("Executing commands on console disabled for now");
 		//bot.run_command(argv, null);
 	}
 }

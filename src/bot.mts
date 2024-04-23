@@ -59,7 +59,7 @@ async function import_history(db:Database) {
 			last_event: e.event_id,
 		};
 	}
-	db.put_meta(room_meta);
+	await db.put_meta(room_meta);
 }
 
 class Room {
@@ -193,7 +193,7 @@ class Bot {
 			},
 			timeout: any, /* For join alert */
 		}
-	}
+	};
 	
 	cmd:CommandManager;
 
@@ -213,7 +213,7 @@ class Bot {
 		};
 
 		
-		this.reset_join_counters()
+		this.reset_join_counters();
 		setInterval(this.reset_join_counters.bind(this), 
 			1000 * 60 // Minute
 			* 60
@@ -228,7 +228,7 @@ class Bot {
 			this.var.joins.rooms[room_id] = {
 				list: [],
 				count: 0,
-			}
+			};
 		}
 	}
 
@@ -250,7 +250,7 @@ class Bot {
 
 	async sync() {
 		console.log("Begin sync loop");
-		while (true) {
+		while (!this.exit) {
 			let sync = await this.api.v3_sync();
 			//console.log(sync)
 			await this.sync_tick(sync);
@@ -302,7 +302,7 @@ class Bot {
 			) {
 				console.log(`Running command ${e.content.body}`);
 				//this.run_command(argv, e);
-				this.cmd.run(e)
+				await this.cmd.run(e);
 			}
 
 			if (e.type == "m.room.member") {
@@ -338,7 +338,7 @@ class Bot {
 
 		for (let word of this.config.word_filter) {
 			if (content.search(word) >= 0) {
-				this.api.v3_redact(e.room_id, e.event_id, "Word filter");
+				await this.api.v3_redact(e.room_id, e.event_id, "Word filter");
 			}
 		}
 	}
@@ -409,7 +409,7 @@ class Bot {
 		}
 
 		if (!this.var.unsynced) {
-			this.db.put_meta(room_meta);
+			await this.db.put_meta(room_meta);
 		}
 
 		this.var.unsynced = false;
@@ -435,7 +435,7 @@ class Bot {
 			}
 			content.body += `${name}`;
 
-			content.formatted_body += `<a href=\"https://matrix.to/#/${member.id}\">${name}</a>`;
+			content.formatted_body += `<a href="https://matrix.to/#/${member.id}">${name}</a>`;
 		});
 
 		content.body += `: ${body}`;
@@ -460,11 +460,11 @@ class Bot {
 		let room = this.rooms[room_id];
 		let e = room.state["m.room.canonical_alias"];
 		
-		let alias = e?.content?.alias
+		let alias = e?.content?.alias;
 		if(alias) 
-			return alias
+			return alias;
 		else 
-			return room_id
+			return room_id;
 	}
 
 	resolve_room(alias:string): string {
@@ -473,12 +473,12 @@ class Bot {
 			let room = this.rooms[room_id];
 			let e = room.state["m.room.canonical_alias"];
 			if (e?.content?.alias == alias) {
-				console.log(`Resolved ${alias} as ${room_id}`)
+				console.log(`Resolved ${alias} as ${room_id}`);
 				return room_id;
 			}
 		}
 
-		console.log(`Failed to resolve ${alias}`)
+		console.log(`Failed to resolve ${alias}`);
 		return "";
 	}
 
@@ -524,13 +524,13 @@ class Bot {
 
 		if (dbuser.onjoin === "mute") {
 			console.log("Muted due to .onjoin");
-			user.set_powerlevel(-1);
+			await user.set_powerlevel(-1);
 			return;
 		}
 
 		if (dbuser.onjoin === "ban") {
 			console.log("Banned due to .onjoin");
-			user.ban();
+			await user.ban();
 			return;
 		}
 
@@ -542,13 +542,14 @@ class Bot {
 		console.log(`Trust ${dbuser.trust}`);
 
 		if (dbuser.trust >= 2) {
-			user.set_powerlevel(1);
+			await user.set_powerlevel(1);
 			return;
 		}
 
 		if (this.config.rooms[room.id].trusted_only) {
-			setTimeout(() => {
-				this.api.v3_kick(
+			setTimeout(async () => {
+				// TODO this will throw unhandled!
+				await this.api.v3_kick(
 					room.id,
 					user.id,
 					this.config.gatekeep_kick_message,
@@ -561,17 +562,17 @@ class Bot {
 
 		if (dbuser.onjoin === "whitelist") {
 			console.log("Whitelisted due to .onjoin");
-			user.set_powerlevel(1);
+			await user.set_powerlevel(1);
 			return;
 		}
 
 		if (this.config.trust_domains[user.id.split(":")[1]] === true) {
 			console.log("Whitelisted due to trusted domain");
-			user.set_powerlevel(1);
+			await user.set_powerlevel(1);
 			return;
 		}
 
-		this.var.joins.rooms[room.id].list.push(user.id)
+		this.var.joins.rooms[room.id].list.push(user.id);
 		if (this.var.joins.timeout == 0) {
 			this.var.joins.timeout = setTimeout(this.join_alert_timeout.bind(this), 2000);
 		}
@@ -583,8 +584,8 @@ class Bot {
 			let r = this.var.joins.rooms[room_id];
 			if (r.list.length == 0) continue;
 
-			r.list.push(this.config.owner_id)
-			this.send_mention(
+			r.list.push(this.config.owner_id);
+			await this.send_mention(
 				room_id,
 				r.list,
 				this.config.gatekeep_mute_message,

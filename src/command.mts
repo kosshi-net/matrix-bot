@@ -2,13 +2,13 @@ import { Bot } from "./bot.mjs";
 import { parse_command } from "./parse_command.mjs";
 import { parse, TextNode, HTMLElement } from "node-html-parser";
 
-const doc_col_1 = 45
+const doc_col_1 = 45;
 
 class Command {
 	ready_on: number;
 	name: string;
 	usage: string;
-	fn: Function;
+	fn: (this:Bot, ctx:CommandContext)=>Promise<void>;
 	description: string;
 
 	filter: {
@@ -123,10 +123,10 @@ class CommandContext {
 		this.target = {
 			room: [],
 			user_id: []
-		}
-		this.parse(event)
-		this.expand_room_macros()
-		this.expand_user_macros()
+		};
+		this.parse(event);
+		this.expand_room_macros();
+		this.expand_user_macros();
 	}
 
 
@@ -185,11 +185,11 @@ class CommandContext {
 			switch (macro.id) {
 				case "#all":
 					for (let room_id in this.bot.config.rooms) {
-						list.push({id: room_id, user_id:[]})
+						list.push({id: room_id, user_id:[]});
 					}
 					break;
 				default:
-					list.push(macro)
+					list.push(macro);
 					break;
 			}
 		}
@@ -210,7 +210,7 @@ class CommandContext {
 				
 				let arg = macro.split("=");
 				if (arg[0] === "@level") {
-					let level = parseInt(arg[1])
+					let level = parseInt(arg[1]);
 					if (isNaN(level)) {
 						// Return an error somehow?
 						continue;
@@ -259,7 +259,7 @@ class CommandContext {
 	async for_rooms( callback:(room_id:string)=>Promise<void> ){
 		for (let alias of this.target.room) {
 			let room_id = this.bot.resolve_room(alias.id);
-			if (room_id) await callback(room_id)
+			if (room_id) await callback(room_id);
 		}
 	}
 
@@ -274,7 +274,7 @@ class CommandContext {
 			let room_id = this.bot.resolve_room(alias.id);
 			if (room_id) {
 				for (let user_id of alias.user_id) {
-					await callback(room_id, user_id)
+					await callback(room_id, user_id);
 				}
 			}
 		}
@@ -298,38 +298,38 @@ class CommandManager {
 	constructor(bot:Bot) {
 		this.bot = bot;
 		this.cmd = new Map<string, Command>();
-		this.md = ""
+		this.md = "";
 
-		this.md += `${"Command".padEnd(doc_col_1)}${"LVL".padEnd(6)}${"Description"}\n`
+		this.md += `${"Command".padEnd(doc_col_1)}${"LVL".padEnd(6)}${"Description"}\n`;
 
 	}
 	
 	register(cmd:Command) {
-		this.cmd.set(cmd.name, cmd)
+		this.cmd.set(cmd.name, cmd);
 
 		let lvltxt = cmd.filter.level.toString();
 
-		this.md += `${cmd.usage.padEnd(doc_col_1)}`
+		this.md += `${cmd.usage.padEnd(doc_col_1)}`;
 		if (cmd.filter.room.any) {
-			this.md += `${lvltxt.padEnd(6)}`
+			this.md += `${lvltxt.padEnd(6)}`;
 		} else {
-			let cli_only = true 
+			let cli_only = true;
 			for (let id in cmd.filter.room) {
-				if (cmd.filter.room[id] === true) cli_only = false
+				if (cmd.filter.room[id] === true) cli_only = false;
 			}
 
 			if (cli_only)
-				this.md += `${"cli".padEnd(6)}`
+				this.md += `${"cli".padEnd(6)}`;
 			else
-				this.md += `${(lvltxt+"*").padEnd(6)}`
+				this.md += `${(lvltxt+"*").padEnd(6)}`;
 		}
-		this.md += `${cmd.description}\n`
+		this.md += `${cmd.description}\n`;
 	}
 
 	async run(event:any) {
 
-		let ctx = new CommandContext(this.bot, event)
-		let cmd = this.cmd.get(ctx.argv[0])
+		let ctx = new CommandContext(this.bot, event);
+		let cmd = this.cmd.get(ctx.argv[0]);
 
 		if (!cmd) {
 			console.log(`No such command: ${ctx.argv[0]}`);
@@ -367,7 +367,7 @@ class CommandManager {
 		try {
 			await cmd.fn.bind(this.bot)(ctx);
 		} catch (err) {
-			ctx.reply(`An error occured:\n<pre><code>${err}</pre></code>`);
+			await ctx.reply(`An error occured:\n<pre><code>${err}</pre></code>`);
 		}
 	}
 }
