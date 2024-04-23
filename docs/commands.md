@@ -25,8 +25,9 @@ acl.reload                                   100   Load acl.json to all managed 
 db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from database.
 db.get_user <@users..> [field]               90    (DEBUG ONLY) Print user's database document, or a specific field of it.
 testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal command context.
-eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
+throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
+eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
 
 * Available only in specific rooms
 ```

@@ -142,7 +142,6 @@ class CommandContext {
 					let id = url.split("/").slice(-1)[0];
 					if (id[0] == "#") this.target.room.push({id:id, user_id:[]});
 					if (id[0] == "!") this.target.room.push({id:id, user_id:[]});
-					//if (id[0] == "!") this.target.room_id.push(id);
 					if (id[0] == "@") this.target.user_id.push(id);
 				}
 
@@ -275,7 +274,7 @@ class CommandContext {
 			let room_id = this.bot.resolve_room(alias.id);
 			if (room_id) {
 				for (let user_id of alias.user_id) {
-					callback(room_id, user_id)
+					await callback(room_id, user_id)
 				}
 			}
 		}
@@ -327,7 +326,7 @@ class CommandManager {
 		this.md += `${cmd.description}\n`
 	}
 
-	run(event:any) {
+	async run(event:any) {
 
 		let ctx = new CommandContext(this.bot, event)
 		let cmd = this.cmd.get(ctx.argv[0])
@@ -365,8 +364,11 @@ class CommandManager {
 			}
 		}
 
-
-		cmd.fn.bind(this.bot)(ctx);
+		try {
+			await cmd.fn.bind(this.bot)(ctx);
+		} catch (err) {
+			ctx.reply(`An error occured:\n<pre><code>${err}</pre></code>`);
+		}
 	}
 }
 

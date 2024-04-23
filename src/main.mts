@@ -91,7 +91,7 @@ async function main() {
 				await this.api.v3_put_state(room_id, "m.room.power_levels", state_event);	
 			}
 		} else {
-			ctx.for_pairs(async (room_id:string, user_id:string) => 
+			await ctx.for_pairs(async (room_id:string, user_id:string) => 
 			{
 				let member = this.get_member(room_id, user_id);
 				let level = member.powerlevel();
@@ -108,7 +108,7 @@ async function main() {
 
 	new Command("redact [#rooms..] <@users>", async function (this:Bot, ctx:CommandContext) 
 	{
-		ctx.for_pairs(async (room_id:string, user_id:string) => {
+		await ctx.for_pairs(async (room_id:string, user_id:string) => {
 			let member = new Member(this, room_id, user_id);
 
 			if (!member.is_member()) {
@@ -129,10 +129,10 @@ async function main() {
 
 	new Command("kick [#rooms..] <@users..>", async function (this:Bot, ctx:CommandContext) 
 	{
-		ctx.for_pairs(async (room_id:string, user_id:string) => 
+		await ctx.for_pairs(async (room_id:string, user_id:string) => 
 		{
 			await this.api.v3_kick(room_id, user_id, "");
-		})
+		});
 	})
 	.set_description("Kick user from target rooms.")
 	.set_level(50)
@@ -141,7 +141,7 @@ async function main() {
 
 	new Command("mute [#rooms..] <@users>", async function (this:Bot, ctx:CommandContext) 
 	{
-		ctx.for_pairs(async (room_id:string, user_id:string) => 
+		await ctx.for_pairs(async (room_id:string, user_id:string) => 
 		{
 			let member = new Member(this, room_id, user_id);
 			if (member.is_member()) {
@@ -157,7 +157,7 @@ async function main() {
 
 	new Command("ban <@users..>", async function (this:Bot, ctx:CommandContext)
 	{
-		ctx.for_users(async (user_id:string)=>
+		await ctx.for_users(async (user_id:string)=>
 		{
 			let tx = new Transaction(this.db);
 			do {
@@ -188,7 +188,7 @@ async function main() {
 
 	new Command("whitelist <@users..>", async function (this:Bot, ctx:CommandContext)
 	{
-		ctx.for_users(async (user_id:string)=>
+		await ctx.for_users(async (user_id:string)=>
 		{
 			let tx = new Transaction(this.db);
 			do {
@@ -221,7 +221,7 @@ async function main() {
 
 	new Command("unban <@users..>", async function (this:Bot, ctx:CommandContext)
 	{
-		ctx.for_users(async (user_id:string)=>
+		await ctx.for_users(async (user_id:string)=>
 		{
 			for (let room in this.config.rooms) {
 				let member = new Member(this, room, user_id);
@@ -243,7 +243,7 @@ async function main() {
 			ctx.reply(`Invalid argument ${rule}, use public or invite`);
 			return;
 		}
-		ctx.for_rooms(async (room_id:string)=>
+		await ctx.for_rooms(async (room_id:string)=>
 		{
 			const data = {
 				join_rule: rule,
@@ -334,7 +334,7 @@ async function main() {
 
 	new Command("db.get_user <@users..> [field]", async function (this:Bot, ctx:CommandContext) {
 		let field = ctx.argv[1];
-		ctx.for_users(async (user_id:string)=>{
+		await ctx.for_users(async (user_id:string)=>{
 			let user = await this.db.get_user(user_id);
 			if (!user) {
 				ctx.reply(`Invalid user ${user_id}`);
@@ -363,6 +363,19 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
+	new Command("throw", async function (_:CommandContext) {
+		throw "Test error";
+	})
+	.set_level(100)
+	.set_description("(DEBUG ONLY) Throw an error.")
+	.allow_any_room()
+	.register(bot.cmd);
+
+	new Command("cli-only", async function (_:CommandContext) {
+	})
+	.set_description("(DEBUG ONLY) NO-OP")
+	.register(bot.cmd);
+
 	new Command("eval <code>", async function (ctx:CommandContext) {
 		try {
 			eval(ctx.argv[1]);
@@ -373,11 +386,6 @@ async function main() {
 	.set_level(100)
 	.set_description("(DEBUG ONLY) Evaluate JavaScript code.")
 	.allow_any_room()
-	.register(bot.cmd);
-
-	new Command("cli-only", async function (_:CommandContext) {
-	})
-	.set_description("(DEBUG ONLY) NO-OP")
 	.register(bot.cmd);
 
 
