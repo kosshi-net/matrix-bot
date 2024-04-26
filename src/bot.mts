@@ -536,6 +536,25 @@ class Bot {
 
 		if (user.powerlevel() != 0) return;
 
+		let idname = e.state_key.split(":")[0].slice(1);
+		let domain = e.state_key.split(":")[1];
+		if (!e.content.avatar_url && domain == "matrix.org" &&
+			(e.content.displayname == idname || !e.content.displayname)
+		) {
+			/* Probably a bot account, kick it */
+
+			setTimeout(async () => {
+				// TODO this will throw unhandled!
+				await this.api.v3_kick(
+					room.id,
+					user.id,
+					"You seem like a bot. To bypass, set an avatar or a displayname."
+				);
+			}, 1500);
+			return;
+		}
+
+
 		console.log("Alert!");
 
 		this.calc_trust(dbuser);
