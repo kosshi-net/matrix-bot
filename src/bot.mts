@@ -64,24 +64,24 @@ async function import_history(db:Database) {
 
 class Room {
 	bot: Bot;
-	id: string;
+	id: RoomID;
 	/* This a R/W interface on top of class Bot's JSON data */
-	constructor(bot:Bot, room_id:string) {
+	constructor(bot:Bot, room_id:RoomID) {
 		this.bot = bot;
 		this.id = room_id;
 	}
 
-	get_member(user_id) {
+	get_member(user_id:UserID): Member {
 		return new Member(this.bot, this.id, user_id);
 	}
 
-	get_user(user_id) {
+	get_user(user_id:UserID): Member {
 		return this.get_member(user_id);
 	}
 
-	get_all_memberships(): Map<string, string> {
+	get_all_memberships(): Map<UserID, string> {
 		console.log("!!!! TESTING ", this.id);
-		let membership = new Map<string, string>;
+		let membership = new Map<UserID, string>;
 		for (let key in this.bot.rooms[this.id].member) {
 			let e = this.bot.rooms[this.id].member[key];
 			console.log(e);
@@ -95,21 +95,21 @@ class Room {
 
 class Member {
 	bot: Bot;
-	room_id: string;
-	id: string;
-	constructor(bot, room_id, user_id) {
+	room_id: RoomID;
+	id:      UserID;
+	constructor(bot:Bot, room_id:RoomID, user_id:UserID) {
 		this.bot = bot;
 		this.room_id = room_id;
 		this.id = user_id;
 	}
 
-	is_banned() {
+	is_banned(): boolean {
 		let event = this.bot.rooms[this.room_id].member[this.id];
 		if (!event) return false;
 		return event.content?.membership === "ban";
 	}
 
-	is_member() {
+	is_member(): boolean {
 		let event = this.bot.rooms[this.room_id].member[this.id];
 		if (!event) return false;
 		return event.content?.membership === "join";
@@ -132,7 +132,7 @@ class Member {
 		return await this.bot.api.v3_ban(this.room_id, this.id, "");
 	}
 
-	powerlevel() {
+	powerlevel(): number {
 		let event = this.bot.rooms[this.room_id].state["m.room.power_levels"];
 
 		if (!event) {
@@ -349,7 +349,9 @@ class Bot {
 		let room_meta = await this.db.get_meta("rooms");
 		if (!room_meta) throw "No room meta"; // TODO this is to shut up TS, investigate what's going on
 
-		for (let room_id in sync.rooms.join) {
+		for (let _room_id in sync.rooms.join) {
+			let room_id = _room_id as RoomID; // TODO silly cast
+
 			this.rooms[room_id] ??= {
 				state: {},
 				member: {},
@@ -415,7 +417,7 @@ class Bot {
 		this.var.unsynced = false;
 	}
 
-	async send_mention(room_id, mentions, body) {
+	async send_mention(room_id:RoomID, mentions:Array<UserID>, body:string) {
 		let content = {
 			body: "",
 			format: "org.matrix.custom.html",
@@ -425,7 +427,7 @@ class Bot {
 
 		let room = this.get_room(room_id);
 
-		mentions.forEach((user_id) => {
+		mentions.forEach((user_id:UserID) => {
 			let member = room.get_member(user_id);
 			let name = member.displayname;
 
@@ -446,17 +448,17 @@ class Bot {
 		await this.api.v3_send(room_id, "m.room.message", content);
 	}
 
-	get_member(room_id, user_id) {
+	get_member(room_id:RoomID, user_id:UserID) {
 		let member = new Member(this, room_id, user_id);
 		return member;
 	}
 
-	get_room(room_id) {
+	get_room(room_id:RoomID) {
 		let room = new Room(this, room_id);
 		return room;
 	}
 
-	get_alias(room_id:string):string {
+	get_alias(room_id:RoomID):RoomAlias {
 		let room = this.rooms[room_id];
 		let e = room.state["m.room.canonical_alias"];
 		
@@ -467,19 +469,20 @@ class Bot {
 			return room_id;
 	}
 
-	resolve_room(alias:string): string {
-		if (alias[0] == "!") return alias;
+	resolve_room(alias:RoomAlias): RoomID {
+		if (alias[0] == "!") 
+			return alias as RoomID;
+
 		for (let room_id in this.rooms) {
 			let room = this.rooms[room_id];
 			let e = room.state["m.room.canonical_alias"];
 			if (e?.content?.alias == alias) {
 				console.log(`Resolved ${alias} as ${room_id}`);
-				return room_id;
+				return room_id as RoomID;
 			}
 		}
 
-		console.log(`Failed to resolve ${alias}`);
-		return "";
+		throw `Failed to resolve ${alias}`;
 	}
 
 
@@ -605,8 +608,12 @@ class Bot {
 
 			r.list.push(this.config.owner_id);
 			await this.send_mention(
-				room_id,
-				r.list,
+
+				/* TODO FIX THESE DIRTY CASTS!!!!!! 
+				 * Strong type the internal room state!!! */
+
+				room_id as RoomID, 
+				r.list as UserID[],
 				this.config.gatekeep_mute_message,
 			);
 
@@ -617,7 +624,7 @@ class Bot {
 	}
 
 
-	async sync_room(room_id) {
+	async sync_room(room_id:RoomID) {
 		let room_meta = await this.db.get_meta("rooms");
 		if (!room_meta) throw "no room meta"; // TODO to shut up TS, investigate later
 		let last_event = room_meta.rooms[room_id].last_event;

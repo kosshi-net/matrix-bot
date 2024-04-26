@@ -111,13 +111,13 @@ class CommandContext {
 	bot: Bot;
 	argv: Array<string>;
 	target: {
-		room: Array< {id:string, user_id:Array<string>} >,
+		room: Array< {id:RoomAlias, user_id:Array<UserID>} >,
 
-		user_id: Array<string>,
+		user_id: Array<UserID>,
 	};
 	event: any;
 
-	constructor(bot: any, event:any) {
+	constructor(bot: Bot, event:any) {
 		this.bot = bot;
 		this.event = event;
 		this.target = {
@@ -140,9 +140,15 @@ class CommandContext {
 					let a = node as HTMLElement;
 					let url = a.getAttribute("href");
 					let id = url.split("/").slice(-1)[0];
-					if (id[0] == "#") this.target.room.push({id:id, user_id:[]});
-					if (id[0] == "!") this.target.room.push({id:id, user_id:[]});
-					if (id[0] == "@") this.target.user_id.push(id);
+
+					if (id[0] == "#") 
+						this.target.room.push({id:id as RoomAlias, user_id:[]});
+
+					if (id[0] == "!") 
+						this.target.room.push({id:id as RoomID, user_id:[]});
+
+					if (id[0] == "@") 
+						this.target.user_id.push(id as UserID);
 				}
 
 				if (node.rawTagName == "") {
@@ -160,13 +166,13 @@ class CommandContext {
 		this.argv = this.argv.filter((word) => {
 			switch (word[0]) {
 				case "#":
-					this.target.room.push({id:word,user_id:[]});
+					this.target.room.push({id:word as RoomAlias, user_id:[]});
 					return false;
 				case "!":
-					this.target.room.push({id:word,user_id:[]});
+					this.target.room.push({id:word as RoomID, user_id:[]});
 					return false;
 				case "@":
-					this.target.user_id.push(word);
+					this.target.user_id.push(word as UserID);
 					return false;
 				default:
 					return true;
@@ -179,13 +185,13 @@ class CommandContext {
 	}
 
 	expand_room_macros(){
-		let list:Array< {id:string, user_id:Array<string>} > = [];
+		let list:Array< {id:RoomAlias, user_id:Array<UserID>} > = [];
 
 		for (let macro of this.target.room) {
 			switch (macro.id) {
 				case "#all":
 					for (let room_id in this.bot.config.rooms) {
-						list.push({id: room_id, user_id:[]});
+						list.push({id: room_id as RoomID, user_id:[]});
 					}
 					break;
 				default:
@@ -199,12 +205,8 @@ class CommandContext {
 	expand_user_macros(){
 		for (let alias of this.target.room) {
 
-			let room_id = this.bot.resolve_room(alias.id);
-			if (!room_id) {
-				console.log(`Alias ${alias} failed to resolve`);
-				continue;
-			}
-			let map = new Map<string, boolean>; /* Used for deduplication */
+			let room_id = this.bot.resolve_room(alias.id); /* This may throw! */
+			let map = new Map<UserID, boolean>; /* Used for deduplication */
 
 			for (let macro of this.target.user_id) {
 				
@@ -218,7 +220,6 @@ class CommandContext {
 					
 					let room = this.bot.get_room(room_id);
 					let ships = room.get_all_memberships();
-					// TODO
 					
 					ships.forEach((state, user_id) => {
 						if(state == "join") {
@@ -256,20 +257,20 @@ class CommandContext {
 
 	}
 
-	async for_rooms( callback:(room_id:string)=>Promise<void> ){
+	async for_rooms( callback:(room_id:RoomID)=>Promise<void> ){
 		for (let alias of this.target.room) {
 			let room_id = this.bot.resolve_room(alias.id);
 			if (room_id) await callback(room_id);
 		}
 	}
 
-	async for_users( callback:(user_id:string)=>Promise<void> ){
+	async for_users( callback:(user_id:UserID)=>Promise<void> ){
 		for (let user_id of this.target.user_id) {
 			await callback(user_id);
 		}
 	}
 
-	async for_pairs( callback:(room_id:string, user_id:string)=>Promise<void> ){
+	async for_pairs( callback:(room_id:RoomID, user_id:UserID)=>Promise<void> ){
 		for (let alias of this.target.room) {
 			let room_id = this.bot.resolve_room(alias.id);
 			if (room_id) {

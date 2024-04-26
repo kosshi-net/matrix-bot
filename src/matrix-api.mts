@@ -20,7 +20,7 @@ class MatrixAPI {
 		this.config = config;
 	}
 
-	async v3_send(room_id: string, event_type: string, content: any) {
+	async v3_send(room_id: RoomID, event_type: string, content: any) {
 		let txn = (this.txn++).toString();
 		let call = {
 			method: "PUT",
@@ -35,7 +35,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_context(room_id: string, event_id: string, limit = 10) {
+	async v3_context(room_id: RoomID, event_id: string, limit = 10) {
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/context/${event_id}?limit=${limit}`,
 			hostname: this.config.hostname,
@@ -49,7 +49,7 @@ class MatrixAPI {
 		return context;
 	}
 
-	async v3_state(room_id: string, type: string) {
+	async v3_state(room_id: RoomID, type: string) {
 		let opt = "";
 		if (type) {
 			opt = `/${type}`;
@@ -67,7 +67,7 @@ class MatrixAPI {
 		return state;
 	}
 
-	async v3_members(room_id: string, filter: string) {
+	async v3_members(room_id: RoomID, filter: string) {
 		let opt = "";
 		if (filter) {
 			opt = `/${filter}`;
@@ -85,7 +85,7 @@ class MatrixAPI {
 		return state;
 	}
 
-	async v3_put_state(room_id: string, type: string, data: any) {
+	async v3_put_state(room_id: RoomID, type: string, data: any) {
 		let call = {
 			method: "PUT",
 			path: `/_matrix/client/v3/rooms/${room_id}/state/${type}`,
@@ -100,7 +100,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_kick(room_id: string, user_id: string, reason: string) {
+	async v3_kick(room_id: RoomID, user_id: UserID, reason: string) {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/kick`,
@@ -119,7 +119,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_unban(room_id: string, user_id: string, reason: string) {
+	async v3_unban(room_id: RoomID, user_id: UserID, reason: string) {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/unban`,
@@ -138,7 +138,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_ban(room_id: string, user_id: string, reason: string) {
+	async v3_ban(room_id: RoomID, user_id: UserID, reason: string) {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/ban`,
@@ -157,7 +157,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_redact(room_id: string, event_id: string, reason: string) {
+	async v3_redact(room_id: RoomID, event_id: UserID, reason: string) {
 		let txn = (this.txn++).toString();
 		let call = {
 			method: "PUT",
@@ -173,7 +173,7 @@ class MatrixAPI {
 		return JSON.parse(ret.body);
 	}
 
-	async v3_messages(room_id: string, token: string, limit = 10) {
+	async v3_messages(room_id: RoomID, token: UserID, limit = 10) {
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/messages?limit=${limit}&from=${token}`,
 			hostname: this.config.hostname,

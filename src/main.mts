@@ -91,7 +91,7 @@ async function main() {
 				await this.api.v3_put_state(room_id, "m.room.power_levels", state_event);	
 			}
 		} else {
-			await ctx.for_pairs(async (room_id:string, user_id:string) => 
+			await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => 
 			{
 				let member = this.get_member(room_id, user_id);
 				let level = member.powerlevel();
@@ -108,7 +108,7 @@ async function main() {
 
 	new Command("redact [#rooms..] <@users>", async function (this:Bot, ctx:CommandContext) 
 	{
-		await ctx.for_pairs(async (room_id:string, user_id:string) => {
+		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => {
 			let member = new Member(this, room_id, user_id);
 
 			if (!member.is_member()) {
@@ -129,7 +129,7 @@ async function main() {
 
 	new Command("kick [#rooms..] <@users..>", async function (this:Bot, ctx:CommandContext) 
 	{
-		await ctx.for_pairs(async (room_id:string, user_id:string) => 
+		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => 
 		{
 			await this.api.v3_kick(room_id, user_id, "");
 		});
@@ -141,7 +141,7 @@ async function main() {
 
 	new Command("mute [#rooms..] <@users>", async function (this:Bot, ctx:CommandContext) 
 	{
-		await ctx.for_pairs(async (room_id:string, user_id:string) => 
+		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => 
 		{
 			let member = new Member(this, room_id, user_id);
 			if (member.is_member()) {
@@ -157,7 +157,7 @@ async function main() {
 
 	new Command("ban <@users..>", async function (this:Bot, ctx:CommandContext)
 	{
-		await ctx.for_users(async (user_id:string)=>
+		await ctx.for_users(async (user_id:UserID)=>
 		{
 			let tx = new Transaction(this.db);
 			do {
@@ -173,7 +173,8 @@ async function main() {
 			} while (await tx.retry());
 
 			for (let room in this.config.rooms) {
-				let member = new Member(this, room, user_id);
+				/* TODO Fix dirty cast!!! */
+				let member = new Member(this, room as RoomID, user_id);
 				if (member.is_member()) {
 					await member.ban();
 					await member.set_powerlevel(0);
@@ -188,7 +189,7 @@ async function main() {
 
 	new Command("whitelist <@users..>", async function (this:Bot, ctx:CommandContext)
 	{
-		await ctx.for_users(async (user_id:string)=>
+		await ctx.for_users(async (user_id:UserID)=>
 		{
 			let tx = new Transaction(this.db);
 			do {
@@ -206,7 +207,8 @@ async function main() {
 			} while (await tx.retry());
 
 			for (let room in this.config.rooms) {
-				let member = new Member(this, room, user_id);
+				/* TODO Fix dirty cast!!! */
+				let member = new Member(this, room as RoomID, user_id);
 				if (member.is_member() && member.powerlevel() <= 0) {
 					await member.set_powerlevel(1);
 				}
@@ -221,10 +223,11 @@ async function main() {
 
 	new Command("unban <@users..>", async function (this:Bot, ctx:CommandContext)
 	{
-		await ctx.for_users(async (user_id:string)=>
+		await ctx.for_users(async (user_id:UserID)=>
 		{
 			for (let room in this.config.rooms) {
-				let member = new Member(this, room, user_id);
+				/* TODO Fix dirty cast!!! */
+				let member = new Member(this, room as RoomID, user_id);
 				if (member.is_banned()) {
 					await member.unban();
 				}
@@ -243,7 +246,7 @@ async function main() {
 			await ctx.reply(`Invalid argument ${rule}, use public or invite`);
 			return;
 		}
-		await ctx.for_rooms(async (room_id:string)=>
+		await ctx.for_rooms(async (room_id:RoomID)=>
 		{
 			const data = {
 				join_rule: rule,
@@ -297,7 +300,8 @@ async function main() {
 			if (!this.config.rooms[room_id].manage) {
 				continue;
 			}
-			await this.api.v3_put_state(room_id, "m.room.server_acl", data);
+			/* TODO fix dirty cast!! */
+			await this.api.v3_put_state(room_id as RoomID, "m.room.server_acl", data);
 		}
 	})
 	.set_description(`Load acl.json to all managed rooms.`)
@@ -317,7 +321,7 @@ async function main() {
 	bot.cmd.md += "\n# Debug commands\n";
 
 	new Command("db.forget_user <@users..>", async function (this:Bot, ctx:CommandContext) {
-		await ctx.for_users(async (user_id:string)=>{
+		await ctx.for_users(async (user_id:UserID)=>{
 			let user = await this.db.get_user(user_id);
 			if (!user) {
 				await ctx.reply(`Invalid user ${user_id}`);
@@ -334,7 +338,7 @@ async function main() {
 
 	new Command("db.get_user <@users..> [field]", async function (this:Bot, ctx:CommandContext) {
 		let field = ctx.argv[1];
-		await ctx.for_users(async (user_id:string)=>{
+		await ctx.for_users(async (user_id:UserID)=>{
 			let user = await this.db.get_user(user_id);
 			if (!user) {
 				await ctx.reply(`Invalid user ${user_id}`);
