@@ -222,7 +222,8 @@ class MatrixAPI {
 			ret.code == StatusCodes.SERVICE_UNAVAILABLE ||
 			ret.code == StatusCodes.TOO_MANY_REQUESTS ||
 			ret.code == StatusCodes.REQUEST_TIMEOUT ||
-			ret.code == 524
+			ret.code == 524 || /* Cloudflare something or other */
+			ret.code == 520    /* Unknown error */
 		) {
 			/* Timeout and return, to try again */
 			if (this.sync_status.timeout > 1000 * 60 * 10) {
@@ -236,7 +237,9 @@ class MatrixAPI {
 			return {};
 		}
 
-		/* TODO What on earth causes 409 CONFLICT in sync? Seems undocumented.*/
+		/* TODO What on earth causes 409 CONFLICT in sync? Seems undocumented.
+		 * Also resetting client state may not be necessary on 409, could be a 
+		 * just be a transient error */
 		if (ret.code == StatusCodes.BAD_REQUEST || 
 			ret.code == StatusCodes.CONFLICT 
 		) {
