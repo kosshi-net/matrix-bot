@@ -8,7 +8,7 @@ help                                         50    Prints help.
 ping                                         1*    Pong!
 
 # Moderaion commands
-level [#rooms..] <@users..> [number]         90    Set or get user powerlevels.
+level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
 redact [#rooms..] <@users>                   50    Redacts user's avatar and displayname.
 kick [#rooms..] <@users..>                   50    Kick user from target rooms.
 mute [#rooms..] <@users>                     50    Mute user in target rooms.

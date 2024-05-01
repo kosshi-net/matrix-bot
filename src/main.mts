@@ -77,6 +77,15 @@ async function main() {
 				await ctx.reply("Invalid level ${level}");
 				return;
 			}
+			
+			if (ctx.event) {
+				let sender_member:Member = this.get_member(ctx.event.room_id, ctx.event.sender);
+				let sender_level = sender_member.powerlevel();
+				if (sender_level < 90 && level > 10) {
+					await ctx.reply("Moderators cannot promote users above level 10");
+					return;
+				}
+			}
 
 			for (let alias of ctx.target.room) {
 				let room_id = this.resolve_room(alias.id);
@@ -101,7 +110,7 @@ async function main() {
 		}
 	})
 	.set_description("Set or get user powerlevels.")
-	.set_level(90)
+	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
 
