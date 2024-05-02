@@ -318,6 +318,61 @@ async function main() {
 	.register(bot.cmd);
 
 	/*
+	______      _        _                    
+	|  _  \    | |      | |                   
+	| | | |__ _| |_ __ _| |__   __ _ ___  ___ 
+	| | | / _` | __/ _` | '_ \ / _` / __|/ _ \
+	| |/ / (_| | || (_| | |_) | (_| \__ \  __/
+	|___/ \__,_|\__\__,_|_.__/ \__,_|___/\___|
+	*/
+
+	bot.cmd.md += "\n# Databse queries\n";
+
+	new Command("db.query <collection> <query>", async function (this:Bot, ctx:CommandContext) {
+
+		let arg_col = ctx.argv[1];
+		let arg_query = JSON.parse(ctx.argv[2]);
+		
+		if (!this.db[arg_col]) {
+			await ctx.reply("No such collection");
+			return;
+		}
+		
+		let arr = await this.db[arg_col].find(arg_query).toArray();
+
+		await ctx.reply(
+			"<pre><code>" +
+			JSON.stringify(arr, null, 4)+
+			"</pre></code>"
+		);
+
+	})
+	.set_description("Query database")
+	.set_level(90)
+	.allow_any_room()
+	.register(bot.cmd);
+	
+
+	new Command("db.get_user <@users..> [field]", async function (this:Bot, ctx:CommandContext) {
+		let field = ctx.argv[1];
+		await ctx.for_users(async (user_id:UserID)=>{
+			let user = await this.db.get_user(user_id);
+			if (!user) {
+				await ctx.reply(`Invalid user ${user_id}`);
+			}
+			if (field) {
+				await ctx.reply("<pre></code>"+JSON.stringify(user[field], null, 4)+"</pre></code>");
+			} else {
+				await ctx.reply("<pre></code>"+JSON.stringify(user, null, 4)+"</pre></code>");
+			}
+		});
+	})
+	.set_description("Print user's database document, or a specific field of it.")
+	.set_level(90)
+	.allow_any_room()
+	.register(bot.cmd);
+
+	/*
 	  _____       _                    _____ __  __ _____      
 	 |  __ \     | |                  / ____|  \/  |  __ \     
 	 | |  | | ___| |__  _   _  __ _  | |    | \  / | |  | |___ 
@@ -345,24 +400,6 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
-	new Command("db.get_user <@users..> [field]", async function (this:Bot, ctx:CommandContext) {
-		let field = ctx.argv[1];
-		await ctx.for_users(async (user_id:UserID)=>{
-			let user = await this.db.get_user(user_id);
-			if (!user) {
-				await ctx.reply(`Invalid user ${user_id}`);
-			}
-			if (field) {
-				await ctx.reply("<pre></code>"+JSON.stringify(user[field], null, 4)+"</pre></code>");
-			} else {
-				await ctx.reply("<pre></code>"+JSON.stringify(user, null, 4)+"</pre></code>");
-			}
-		});
-	})
-	.set_description("(DEBUG ONLY) Print user's database document, or a specific field of it.")
-	.set_level(90)
-	.allow_any_room()
-	.register(bot.cmd);
 
 	new Command("testctx [#rooms..] [@users..] [args..]", async function (this:Bot, ctx:CommandContext) {
 		let context = {

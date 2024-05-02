@@ -21,9 +21,12 @@ joinrule [#rooms..] <public|invite>          50    Sets room to public or invite
 acl <homeserver>                             100   Write homeserver to deny field of acl.json
 acl.reload                                   100   Load acl.json to all managed rooms.
 
+# Databse queries
+db.query <collection> <query>                90    Query database
+db.get_user <@users..> [field]               90    Print user's database document, or a specific field of it.
+
 # Debug commands
 db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from database.
-db.get_user <@users..> [field]               90    (DEBUG ONLY) Print user's database document, or a specific field of it.
 testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal command context.
 throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
