@@ -381,6 +381,8 @@ class Bot {
 				e.room_id = room_id;
 				await this.event(e);
 
+
+				room_meta.rooms[room_id] ??= {};
 				room_meta.rooms[room_id].last_event = e.event_id;
 			}
 		}
@@ -627,7 +629,14 @@ class Bot {
 	async sync_room(room_id:RoomID) {
 		let room_meta = await this.db.get_meta("rooms");
 		if (!room_meta) throw "no room meta"; // TODO to shut up TS, investigate later
-		let last_event = room_meta.rooms[room_id].last_event;
+		let last_event = room_meta.rooms[room_id]?.last_event;
+		
+		if (!last_event) {
+			/* New room was added! */
+			room_meta.rooms[room_id] = {};
+			await this.db.put_meta(room_meta);
+			return;
+		}
 
 		let context = await this.api.v3_context(room_id, last_event, 50);
 
