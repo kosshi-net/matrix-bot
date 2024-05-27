@@ -47,18 +47,7 @@ class Command {
 		this.description = text;
 		return this;
 	}
-/*  
-	Disabled for now, unclear if necessary
 
-	allow_console() {
-		this.filter.console = true;
-		return this;
-	}
-	deny_console() {
-		this.filter.console = false;
-		return this;
-	}
-*/
 	set_level(level: number) {
 		this.filter.level = level;
 		return this;
@@ -116,24 +105,28 @@ class CommandContext {
 		user_id: Array<UserID>,
 	};
 	event: any;
+	str: string;
 
-	constructor(bot: Bot, event:any) {
+	constructor(bot: Bot, event?:any, str?:string) {
 		this.bot = bot;
 		this.event = event;
+		this.str = str;
 		this.target = {
 			room: [],
 			user_id: []
 		};
-		this.parse(event);
+		this.parse();
 		this.expand_room_macros();
 		this.expand_user_macros();
 	}
 
 
-	parse(event:any) {
-	   let text:Array<string> = [];
+	parse() {
+		let event = this.event;
+		let text:Array<string> = [];
 
-		if (event.content.format == "org.matrix.custom.html") {
+
+		if (event && event.content.format == "org.matrix.custom.html") {
 			const root = parse(event.content.formatted_body);
 			for (let node of Array.from(root.childNodes)) {
 				if (node.rawTagName == "a") {
@@ -157,7 +150,12 @@ class CommandContext {
 				}
 			}
 		} else {
-			text.push(event.content.body);
+			if (event) {
+				text.push(event.content.body);
+			} else {
+				/* No event means the command was ran from a console */
+				text.push(this.str);
+			}
 		}
 
 		this.argv = parse_command(text.join(" "));
@@ -199,7 +197,7 @@ class CommandContext {
 					break;
 			}
 		}
-		this.target.room= list;
+		this.target.room = list;
 	}
 
 	expand_user_macros(){
@@ -327,18 +325,13 @@ class CommandManager {
 		this.md += `${cmd.description}\n`;
 	}
 
-	async run(event:any) {
+	async run(event?:any, str?:string) {
 
-		let ctx = new CommandContext(this.bot, event);
+		let ctx = new CommandContext(this.bot, event, str);
 		let cmd = this.cmd.get(ctx.argv[0]);
 
 		if (!cmd) {
 			console.log(`No such command: ${ctx.argv[0]}`);
-			return 1;
-		}
-
-		if (!event && cmd.filter.console == false) {
-			console.log("This command cannot be run on the console.");
 			return 1;
 		}
 
