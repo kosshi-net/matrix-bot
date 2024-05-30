@@ -6,6 +6,7 @@ Command                                      LVL   Description
 # General commands
 help                                         50    Prints help.
 ping                                         1*    Pong!
+activity [#rooms..] [@users..] [timezone:number]50    Activity statistics and graphs
 
 # Moderaion commands
 level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.

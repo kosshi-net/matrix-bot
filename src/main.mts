@@ -54,6 +54,124 @@ async function main() {
 	.register(bot.cmd);
 	
 
+	new Command("activity [#rooms..] [@users..] [timezone:number]", async function (this:Bot, ctx:CommandContext) {
+		let timezone = 0;
+		
+		if (ctx.argv[1]) {
+			timezone = parseInt(ctx.argv[1]);
+		}
+		console.log("Timezone:", timezone);
+		if (!Number.isInteger(timezone)) {
+			await ctx.reply("Invalid timezone. Usage: !activity #example:matrix.org @example:matrix.org +2");
+			return;
+		}
+
+		let res = [
+			"▏",
+			"▎",
+			"▍",
+			"▌",
+			"▋",
+			"▊",
+			"▉",
+			"█",
+		];
+
+		if (ctx.event) {
+			/* Unicode blocks render poorly in a browser, use a pipe instead */
+			res = [
+				"|"
+			];
+		}
+
+		let days = [
+			"Mon",
+			"Tue",
+			"Wed",
+			"Thu",
+			"Fri",
+			"Sat",
+			"Sun"
+		];
+
+		let bar_length = 16;
+
+		let activity_hour = new Int32Array(24);
+		let activity_day = new Int32Array(7);
+		let total = 0;
+		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => {
+			
+			let query = { room_id: room_id, sender: user_id };
+			let events = await this.db.events.find(query).toArray();
+			total += events.length;
+			
+			for (let e of events) {
+				
+				let date = new Date(e.origin_server_ts + (1000*60*60*timezone));
+				//let h = (date.getUTCHours() + timezone + 24) % 24;
+				let h = (date.getUTCHours());
+				activity_hour[h]++;
+
+				let d = (date.getUTCDay());
+				activity_day[d]++;
+
+			}
+
+		});
+		let output = "<pre><code>\n";
+		let sign = timezone < 0 ? "" : "+";
+		output += `Timezone: GMT${sign}${timezone}\n`;
+		output += `Total events sent: ${total}\n`;
+	
+		let hmax = 0;
+		for (let h = 0; h < 24; h++) {
+			hmax = Math.max(activity_hour[h], hmax);
+		}
+
+		let dmax = 0;
+		for (let h = 0; h < 7; h++) {
+			dmax = Math.max(activity_day[h], dmax);
+		}
+	
+		let graph_week = [];
+		for (let d = 0; d < 7; d++) {
+			let norm = activity_day[d] / dmax * bar_length;
+			let bar = "";
+			for (let i = 0; i < norm; i++) {
+				bar += res[res.length-1];
+			}
+			let dec = Math.floor((norm % 1) * res.length);
+			bar += res[dec];
+			bar = bar.padEnd(bar_length+1, " ");
+			let count = activity_day[d].toString().padStart(5, " ");
+			graph_week.push(`${days[d]} ${bar} - ${count}`);
+		}
+
+		for (let h = 0; h < 24; h++) {
+			let norm = activity_hour[h] / hmax * bar_length;
+			let bar = "";
+			for (let i = 0; i < norm; i++) {
+				bar += res[res.length-1];
+			}
+			let dec = Math.floor((norm % 1) * res.length);
+			bar += res[dec];
+			bar = bar.padEnd(bar_length+1, " ");
+			let count = activity_hour[h].toString().padStart(5, " ");
+			output += `${(h).toString().padStart(2,'0')}:00 ${bar} - ${count}`;
+			if (h < graph_week.length) {
+				output += "  " + graph_week[h];
+			}
+			output += "\n";
+		}
+		output += "</code></pre>\n";
+
+
+		await ctx.reply(output);
+	})
+	.set_description("Activity statistics and graphs")
+	.set_level(50)
+	.allow_any_room()
+	.register(bot.cmd);
 	/*
 	___  ___          _                _   _             
 	|  \/  |         | |              | | (_)            
