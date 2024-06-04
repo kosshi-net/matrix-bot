@@ -570,6 +570,12 @@ class Bot {
 			return;
 		}
 
+		if (this.config.trust_domains[user.id.split(":")[1]] === true) {
+			console.log("Whitelisted due to trusted domain");
+			await user.set_powerlevel(1);
+			return;
+		}
+
 		if (this.config.rooms[room.id].trusted_only) {
 			setTimeout(async () => {
 				// TODO this will throw unhandled!
@@ -590,11 +596,7 @@ class Bot {
 			return;
 		}
 
-		if (this.config.trust_domains[user.id.split(":")[1]] === true) {
-			console.log("Whitelisted due to trusted domain");
-			await user.set_powerlevel(1);
-			return;
-		}
+
 
 		this.var.joins.rooms[room.id].list.push(user.id);
 		if (this.var.joins.timeout == 0) {
