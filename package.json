@@ -4,6 +4,7 @@
   "description": "",
   "main": "build/main.mjs",
   "dependencies": {
+    "hamming-distance": "^1.0.0",
     "http-status-codes": "^2.3.0",
     "mongodb": "^6.5.0",
     "node-html-parser": "^6.1.13"

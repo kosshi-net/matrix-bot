@@ -34,6 +34,7 @@ throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
 react [emoji]                                50    Replies with a reaction.
+phash                                        100   Return phash of quoted m.image event.
 
 * Available only in specific rooms
 ```

@@ -594,6 +594,46 @@ async function main() {
 	.register(bot.cmd);
 
 
+	new Command("phash", async function (this:Bot, ctx:CommandContext) {
+		
+		let target_id = ctx.event.content["m.relates_to"]?.["m.in_reply_to"]?.event_id;
+
+		if (!target_id) {
+			await ctx.reply("No reply event id found");
+			return;
+		}
+
+		let e = await this.db.get_event(ctx.event.room_id, target_id);
+
+		if (!e) {
+			await ctx.reply("Failed to find quoted event.");
+			return;
+		}
+
+		if (e.content?.msgtype != "m.image") {
+			await ctx.reply("Quoted event has no image.");
+			return;
+		}
+
+		let mime = e.content?.info?.mimetype;
+		switch (mime) {
+		case "image/jpeg":
+		case "image/png":
+			break;
+		default:
+			await ctx.reply(`Unsupported content-type (${mime})`);
+			return;
+		}
+
+		let hash = await this.phash.hash(e.content.url);
+
+		await ctx.reply(`<code>${hash}</code>`);
+	})
+	.set_description("Return phash of quoted m.image event.")
+	.allow_any_room()
+	.set_level(100)
+	.register(bot.cmd);
+
 
 	/*
 	______                                      _        _   _             

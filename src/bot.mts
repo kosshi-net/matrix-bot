@@ -5,6 +5,7 @@ import { CommandContext, CommandManager, Command } from "./command.mjs";
 
 import { MatrixAPI } from "./matrix-api.mjs";
 import { Database } from "./database.mjs";
+import { pHashManager } from "./phash-manager.mjs";
 
 async function import_history(db:Database) {
 	console.log("Importing history ...");
@@ -179,6 +180,7 @@ class Bot {
 	config: any;
 	db: Database;
 	api: MatrixAPI;
+	phash: pHashManager;
 	rooms: any;
 	exit: boolean;
 	var: {
@@ -202,6 +204,7 @@ class Bot {
 		this.db = new Database(this.config);
 		this.api = new MatrixAPI(this.config);
 		this.cmd = new CommandManager(this);
+		this.phash = new pHashManager(this);
 
 		this.var = {
 			_counter: 0,
@@ -295,10 +298,17 @@ class Bot {
 			live = true;
 			tags.push("live");
 
+			let stripped_body = e.content?.body;
+
+			if (stripped_body[0] == ">" && stripped_body.search("\n\n") != -1) {
+				stripped_body = stripped_body.split("\n\n")[1];
+				if (!stripped_body) stripped_body = e.content?.body;
+			}
+
 			if (
 				e.type == "m.room.message" &&
 				e.content?.msgtype == "m.text" &&
-				e.content?.body[0] == "!"
+				stripped_body[0] == "!"
 			) {
 				console.log(`Running command ${e.content.body}`);
 				//this.run_command(argv, e);
