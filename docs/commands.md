@@ -33,6 +33,7 @@ testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal 
 throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
+react [emoji]                                50    Replies with a reaction.
 
 * Available only in specific rooms
 ```

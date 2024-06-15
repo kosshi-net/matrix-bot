@@ -964,6 +964,23 @@ class Bot {
 		return user;
 	}
 
+
+
+	async react(event:any, key:string) {
+
+		let content = {
+			"m.relates_to": {
+				event_id: event.event_id,
+				key: key,
+				rel_type: "m.annotation"
+			}
+		};
+
+		await this.api.v3_send(event.room_id, "m.reaction", content);
+
+	}
+
+
 }
 
 export { Bot, Room, Member };

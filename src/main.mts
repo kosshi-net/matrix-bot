@@ -583,6 +583,18 @@ async function main() {
 	.register(bot.cmd);
 
 
+	new Command("react [emoji]", async function (this:Bot, ctx:CommandContext) {
+		let key = ctx.argv[1];
+		if (!key) key = "?";
+		await this.react(ctx.event, key);
+	})
+	.set_description("Replies with a reaction.")
+	.allow_any_room()
+	.set_level(50)
+	.register(bot.cmd);
+
+
+
 	/*
 	______                                      _        _   _             
 	|  _  \                                    | |      | | (_)            
