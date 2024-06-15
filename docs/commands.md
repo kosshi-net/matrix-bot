@@ -25,6 +25,7 @@ acl.reload                                   100   Load acl.json to all managed 
 # Databse queries
 db.query <collection> <query>                90    Query database
 db.get_user <@users..> [field]               90    Print user's database document, or a specific field of it.
+dump_mxc [#rooms..] <filename.json>          100   Save all m.image events to a file
 
 # Debug commands
 db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from database.

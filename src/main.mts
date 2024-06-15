@@ -490,6 +490,32 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
+
+	new Command("dump_mxc [#rooms..] <filename.json>", async function (this:Bot, ctx:CommandContext) {
+		let filename = ctx.argv[1];
+		let out = [];
+		if (!filename) {
+			await ctx.reply("No filename");
+			return;
+		}
+		await ctx.for_rooms(async (room_id:RoomID)=>{
+			let query = {
+				"content.msgtype":"m.image", 
+				"room_id": room_id
+			};
+
+			let arr = await this.db.events.find(query).toArray();
+			out = out.concat(arr);
+		});
+		await fs.writeFile(filename, JSON.stringify(out, null, 4));
+		await ctx.reply(`Saved ${out.length} events to ${filename}`);
+	})
+	.set_description("Save all m.image events to a file")
+	.set_level(100)
+	.allow_any_room()
+	.register(bot.cmd);
+
+
 	/*
 	  _____       _                    _____ __  __ _____      
 	 |  __ \     | |                  / ____|  \/  |  __ \     
