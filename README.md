@@ -30,7 +30,7 @@ Since this project is under eternal development, the history is imported to
 local files first to avoid bombarding matrix servers when db inevitably needs 
 to be rebuilt. 
 
-First you must import room history with `room-importer` to a folder 
+First you must import room history with `extra/room-importer` to a folder 
 `./history/<room>/*.json`. Room name does not matter. 
 Preferably do this using an account that has access to the beginning of room 
 history, eg the room's creator. 
