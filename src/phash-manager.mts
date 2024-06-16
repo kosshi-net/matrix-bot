@@ -4,15 +4,29 @@ import {phash} from "./phash.mjs";
 
 class pHashManager {
 	bot:Bot;
-	cache: Map<string, boolean>;
+	cache: Array<Buffer>;
 
 	constructor(bot:Bot) {
 		this.bot = bot;
-		this.cache = new Map<string, boolean>;
+		this.cache = [];
+		void this.load();
+	}
+
+	async load() {
+		let arr = await this.bot.db.phash.distinct("phash");
+		//this.cache = this.cache.concat(arr);
+		
+		for (let hash of arr) {
+			this.cache.push( Buffer.from(hash, "hex") );
+		}
+		
+		console.log(`Loaded ${arr.length} phashes`);
 	}
 
 	async hash(mxc:string):Promise<string> {
 		
+		let t_begin = performance.now();
+
 		let u = new URL(mxc);
 		let url = `https://${this.bot.config.hostname}/_matrix/media/v3/download/${u.host}${u.pathname}`;
 
@@ -21,6 +35,8 @@ class pHashManager {
 
 		console.log(`Downloading ${url}`);
 		let r = await fetch(url);
+		
+		let t_downloaded = performance.now();
 
 		if (r.status != 200) {
 			throw `Error: status code ${r.status}\n${url}\n`;
@@ -39,21 +55,67 @@ class pHashManager {
 		destination = `${destination}.${extension}`;
 
 		await fs.writeFile(destination, buffer);
+
+		let t_wrote = performance.now();
 		
 		let hash = await phash.hash(destination);
+
+		let t_hashed = performance.now();
 		
 		await fs.unlink(destination);
+
+		let t_finished = performance.now();
+
+
+		console.log(`Download: ${t_downloaded - t_begin} ms`);
+		console.log(`Write:    ${t_wrote - t_downloaded} ms`);
+		console.log(`Hash:     ${t_hashed - t_wrote} ms`);
+		console.log(`Finish:   ${t_finished - t_hashed} ms`);
+		console.log(`Total:    ${t_finished - t_begin} ms`);
+
 
 		return hash;
 	}
 
-	async check(event:any){
+	async get_matches(hash:string):Promise<Array<string>> {
+		let hash_list = [];
+
+		let hb = Buffer.from(hash, "hex");
+
+		for (let h2 of this.cache) {
+			let delta = phash.compare_buffer(hb, h2);
+			if (delta < 2) {
+				hash_list.push(h2.toString('hex').padStart(16, '0') );
+			}
+		}
+
+
+		const query = { phash: { $in: hash_list } };
+		let ret = await this.bot.db.phash.find(query).toArray();
 		
+		let results = [];
+
+		for (let doc of ret) {
+			results.push(doc._id);
+		}
+
+		console.log(ret);
+		console.log(hash_list);
+
+		return results;
+	}
+
+	async check(event:any, react: boolean = true) {
+		
+		if (this.bot.config.rooms[event.room_id].phash != true) {
+			return;
+		}
+
 		if (event.content?.msgtype != "m.image") {
 			return;
 		}
 
-		let mime = event.content?.mime;
+		let mime = event.content?.info?.mimetype;
 		switch (mime) {
 		case "image/jpeg":
 		case "image/png":
@@ -75,7 +137,34 @@ class pHashManager {
 			return;
 		}
 		
+		console.log(h);
 		
+
+		let hb = Buffer.from(h, "hex");
+
+		if (react)
+		for (let h2 of this.cache) {
+			let delta = phash.compare_buffer(hb, h2);
+			if (delta < 2) {
+				await this.bot.react(event, "♻️");
+				break;
+			}
+		}
+		
+		/* Insert */
+		this.cache.push(hb);
+
+		let doc = {
+			_id:   mxc,
+			phash: h,
+		};
+		
+		await this.bot.db.phash.updateOne(
+			{ _id: doc._id },
+			{ $set: doc },
+			{ upsert: true },
+		);
+
 	}
 
 }

@@ -74,12 +74,14 @@ class Database {
 	events: Collection;
 	users: Collection;
 	meta: Collection;
+	phash: Collection;
 	constructor(config: any) {
 		this.client = new MongoClient(config.db);
 		this.database = this.client.db("2023-06-16");
 		this.events = this.database.collection("events");
 		this.users = this.database.collection("users");
 		this.meta = this.database.collection("meta");
+		this.phash = this.database.collection("phash");
 	}
 
 	async wipe() {

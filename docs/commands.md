@@ -6,7 +6,13 @@ Command                                      LVL   Description
 # General commands
 help                                         50    Prints help.
 ping                                         1*    Pong!
-activity [#rooms..] [@users..] [timezone:number]50    Activity statistics and graphs
+activity [#rooms..] [@users..] [tz:number]   50    Activity statistics and graphs
+react [emoji]                                50    Replies with a reaction.
+
+# pHash commands
+phash                                        50    Return phash and matches of the quoted image.
+phash.import <file>                          100   Import image hashes from a file
+phash.scan                                   cli   Find and hash unhashed image events.
 
 # Moderaion commands
 level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
@@ -33,8 +39,6 @@ testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal 
 throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
-react [emoji]                                50    Replies with a reaction.
-phash                                        100   Return phash of quoted m.image event.
 
 * Available only in specific rooms
 ```

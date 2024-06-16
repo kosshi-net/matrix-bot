@@ -54,7 +54,7 @@ async function main() {
 	.register(bot.cmd);
 	
 
-	new Command("activity [#rooms..] [@users..] [timezone:number]", async function (this:Bot, ctx:CommandContext) {
+	new Command("activity [#rooms..] [@users..] [tz:number]", async function (this:Bot, ctx:CommandContext) {
 		let timezone = 0;
 		
 		if (ctx.argv[1]) {
@@ -172,6 +172,152 @@ async function main() {
 	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
+
+	new Command("react [emoji]", async function (this:Bot, ctx:CommandContext) {
+		let key = ctx.argv[1];
+		if (!key) key = "?";
+		await this.react(ctx.event, key);
+	})
+	.set_description("Replies with a reaction.")
+	.allow_any_room()
+	.set_level(50)
+	.register(bot.cmd);
+
+	/*     _   _           _     
+		  | | | |         | |    
+	 _ __ | |_| | __ _ ___| |__  
+	| '_ \|  _  |/ _` / __| '_ \ 
+	| |_) | | | | (_| \__ \ | | |
+	| .__/\_| |_/\__,_|___/_| |_|
+	| |                          
+	|_|                          
+	*/
+	bot.cmd.md += "\n# pHash commands\n";
+
+	new Command("phash", async function (this:Bot, ctx:CommandContext) {
+		
+		let target_id = ctx.event.content["m.relates_to"]?.["m.in_reply_to"]?.event_id;
+
+		if (!target_id) {
+			await ctx.reply("No reply event id found");
+			return;
+		}
+
+		let e = await this.db.get_event(ctx.event.room_id, target_id);
+
+		if (!e) {
+			await ctx.reply("Failed to find quoted event.");
+			return;
+		}
+
+		if (e.content?.msgtype != "m.image") {
+			await ctx.reply("Quoted event has no image.");
+			return;
+		}
+
+		let mime = e.content?.info?.mimetype;
+		switch (mime) {
+		case "image/jpeg":
+		case "image/png":
+			break;
+		default:
+			await ctx.reply(`Unsupported content-type (${mime})`);
+			return;
+		}
+
+		let hash = await this.phash.hash(e.content.url);
+
+		let arr = await this.phash.get_matches(hash);
+		
+		let e_list = await this.db.events.find( {"content.url": {$in: arr}}).toArray();
+
+		let out = `<code>${hash}</code>\n`;
+		for (let e of e_list) {
+			out += `https://matrix.to/#/${e.room_id}/${e.event_id}\n`;
+		}
+		out += "";
+
+		await ctx.reply(out);
+	})
+	.set_description("Return the hash and reposts of the quoted image.")
+	.allow_any_room()
+	.set_level(50)
+	.register(bot.cmd);
+
+
+	new Command("phash.import <file>", async function (ctx) {
+		let data = JSON.parse(await fs.readFile(ctx.argv[1], "utf8"));
+		console.log(data);
+		let list = [];
+		let up = 0;
+		for (let obj of data) {
+
+			let doc = {
+				_id:   obj.mxc,
+				phash: obj.phash,
+			};
+			
+			let op = {
+				updateOne: {
+					filter: {_id: doc._id},
+					update: doc,
+					upsert: true,
+				}
+			};
+	
+			const query = { _id: doc._id };
+			const ret = await this.db.phash.updateOne(
+				query,
+				{ $set: doc },
+				{ upsert: true },
+			);
+			up += ret.upsertedCount;
+
+			list.push(op);
+		}
+		await ctx.reply(`Inserted ${list.length} items (${up} upserts).`);
+	})
+	.set_description("Import image hashes from a file")
+	.set_level(100)
+	.allow_any_room()
+	.register(bot.cmd);
+
+	new Command("phash.scan", async function (ctx) {
+		
+		let e_list = [];
+		await ctx.for_rooms(async (room_id:RoomID)=>{
+			let query = {
+				"content.msgtype":"m.image", 
+				"room_id": room_id
+			};
+
+			let arr = await this.db.events.find(query).toArray();
+			e_list = e_list.concat(arr);
+		});
+
+		let mxc_list = await this.db.phash.distinct("_id");
+	
+		console.log(mxc_list);
+
+		await ctx.reply(`Total events ${e_list.length}`);
+
+		e_list = e_list.filter( (e)=>{ 
+			for (let mxc of mxc_list) {
+				if (e.content.url == mxc) return false;
+			}
+			return true;
+		});
+	
+		await ctx.reply(`Events missing phash: ${e_list.length}`);
+
+		for (let e of e_list) {
+			await this.phash.check(e, false);
+		}
+	})
+	.set_description("Find and hash unhashed image events.")
+	.register(bot.cmd);
+
+
 	/*
 	___  ___          _                _   _             
 	|  \/  |         | |              | | (_)            
@@ -516,6 +662,8 @@ async function main() {
 	.register(bot.cmd);
 
 
+
+
 	/*
 	  _____       _                    _____ __  __ _____      
 	 |  __ \     | |                  / ____|  \/  |  __ \     
@@ -583,56 +731,6 @@ async function main() {
 	.register(bot.cmd);
 
 
-	new Command("react [emoji]", async function (this:Bot, ctx:CommandContext) {
-		let key = ctx.argv[1];
-		if (!key) key = "?";
-		await this.react(ctx.event, key);
-	})
-	.set_description("Replies with a reaction.")
-	.allow_any_room()
-	.set_level(50)
-	.register(bot.cmd);
-
-
-	new Command("phash", async function (this:Bot, ctx:CommandContext) {
-		
-		let target_id = ctx.event.content["m.relates_to"]?.["m.in_reply_to"]?.event_id;
-
-		if (!target_id) {
-			await ctx.reply("No reply event id found");
-			return;
-		}
-
-		let e = await this.db.get_event(ctx.event.room_id, target_id);
-
-		if (!e) {
-			await ctx.reply("Failed to find quoted event.");
-			return;
-		}
-
-		if (e.content?.msgtype != "m.image") {
-			await ctx.reply("Quoted event has no image.");
-			return;
-		}
-
-		let mime = e.content?.info?.mimetype;
-		switch (mime) {
-		case "image/jpeg":
-		case "image/png":
-			break;
-		default:
-			await ctx.reply(`Unsupported content-type (${mime})`);
-			return;
-		}
-
-		let hash = await this.phash.hash(e.content.url);
-
-		await ctx.reply(`<code>${hash}</code>`);
-	})
-	.set_description("Return phash of quoted m.image event.")
-	.allow_any_room()
-	.set_level(100)
-	.register(bot.cmd);
 
 
 	/*

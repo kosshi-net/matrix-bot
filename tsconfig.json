@@ -9,5 +9,5 @@
 		"outDir":"build",
 		"types": ["node"]
 	},
-	"exclude": ["room-importer", "build", "node_modules"]
+	"exclude": ["build", "node_modules"]
 }

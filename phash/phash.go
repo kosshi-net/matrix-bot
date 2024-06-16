@@ -22,5 +22,5 @@ func main() {
 	}
 	hash1 := phash.DTC(img)
 
-	fmt.Printf("%v", strconv.FormatUint(hash1, 16));
+	fmt.Printf("%016v", strconv.FormatUint(hash1, 16));
 }

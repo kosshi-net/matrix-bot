@@ -300,7 +300,7 @@ class Bot {
 
 			let stripped_body = e.content?.body;
 
-			if (stripped_body[0] == ">" && stripped_body.search("\n\n") != -1) {
+			if (stripped_body && stripped_body[0] == ">" && stripped_body.search("\n\n") != -1) {
 				stripped_body = stripped_body.split("\n\n")[1];
 				if (!stripped_body) stripped_body = e.content?.body;
 			}
@@ -322,6 +322,10 @@ class Bot {
 
 		if (e.type == "m.room.message") {
 			tags.push(e.content.msgtype);
+		}
+
+		if (live && e.content?.msgtype == "m.image") {
+			await this.phash.check(e);
 		}
 
 		console.log(

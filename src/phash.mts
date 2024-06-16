@@ -19,9 +19,14 @@ function compare(a:string, b:string):number {
 	return hdist( Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 }
 
+function compare_buffer(a:Buffer, b:Buffer):number {
+	return hdist(a, b);
+}
+
 let phash = {
 	hash:hash,
-	compare:compare
+	compare:compare,
+	compare_buffer:compare_buffer
 };
 
 export {phash};

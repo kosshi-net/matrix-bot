@@ -20,7 +20,7 @@ See [docs/commands.md](./docs/commands.md)
 
 ## Database
 The bot uses MongoDB to store a complete copy of room event timelines, and 
-maintains statistics about participating users.
+maintains statistics about participating users. 
 
 The bot is able to fetch history to recover from downtime 
 or truncated sync responses.
@@ -64,13 +64,15 @@ Below is an example `config.json`. The real one is .gitignored
 		"!roomid1:example.org": {
 			"manage": true,
 			"word_filter": false,
-			"trusted_only": true 
+			"trusted_only": true,
+			"phash": false 
 		},
 
 		"!roomid2:example.org": {
 			"manage": true,
 			"word_filter": true,
-			"trusted_only": false
+			"trusted_only": false,
+			"phash": true 
 		},
 
 	},
@@ -99,6 +101,10 @@ Below is an example `config.json`. The real one is .gitignored
 
 ```
 
+### Image repost detection
+The bot creates perceptual hashes of images posted to rooms where 
+`"phash"=true`, which is then used for repost detection. The bot reacts with 
+♻️  to pictures it deems are duplicates.
 
 ### User trust
 The bot uses gathered statistics to determine the "trust level" of users. This 
