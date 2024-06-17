@@ -75,8 +75,8 @@ class Database {
 	users: Collection;
 	meta: Collection;
 	phash: Collection;
-	constructor(config: any) {
-		this.client = new MongoClient(config.db);
+	constructor(config: BotConfig) {
+		this.client = new MongoClient(config.db_url);
 		this.database = this.client.db("2023-06-16");
 		this.events = this.database.collection("events");
 		this.users = this.database.collection("users");

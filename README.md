@@ -25,6 +25,11 @@ maintains statistics about participating users.
 The bot is able to fetch history to recover from downtime 
 or truncated sync responses.
 
+
+### Config
+See `src/matrix.d.ts` for config format. Create a file that exports a suitable
+object from `config/config.mts` (this file is .gitignored). 
+
 ### Adding bot to rooms
 Since this project is under eternal development, the history is imported to 
 local files first to avoid bombarding matrix servers when db inevitably needs 
@@ -40,66 +45,6 @@ database by setting `WIPE_DB=1` environment variable.
 
 If you wish to retain user ban/mute etc status, run `export` from the bot's 
 command line before db reset. Then run `import` once db has been rebuilt. 
-
-## Config
-
-Below is an example `config.json`. The real one is .gitignored
-
-```json
-{
-	"userId"      : "@bot:matrix.org",
-	"accessToken" : "syt_REDACTED",
-
-	"baseUrl"     : "https://matrix.org",
-	"hostname"    : "matrix.org",
-
-	"owner_id"     : "@admin:example.org",
-
-	"db"          : "mongodb://localhost:27017/",
-
-	"alert_room":"!alerts:example.org",
-
-	"rooms": {
-
-		"!roomid1:example.org": {
-			"manage": true,
-			"word_filter": false,
-			"trusted_only": true,
-			"phash": false 
-		},
-
-		"!roomid2:example.org": {
-			"manage": true,
-			"word_filter": true,
-			"trusted_only": false,
-			"phash": true 
-		},
-
-	},
-	
-
-	"trust_domains": {
-		"example.org": true
-	},
-
-	"gatekeep_kick_message": "Insufficient trust",
-	"gatekeep_mute_message": "To prevent abuse, new users are muted.",
-
-
-	"word_filter": [
-		"censorme"
-	],
-
-	"letter_alias": [
-		["ä", "a"],
-		["ö", "o"],
-		["а", "a"],
-		["о", "o"]
-	]
-}
-
-
-```
 
 ### Image repost detection
 The bot creates perceptual hashes of images posted to rooms where 

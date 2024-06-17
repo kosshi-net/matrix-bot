@@ -10,7 +10,7 @@ activity [#rooms..] [@users..] [tz:number]   50    Activity statistics and graph
 react [emoji]                                50    Replies with a reaction.
 
 # pHash commands
-phash                                        50    Return phash and matches of the quoted image.
+phash                                        50    Return the hash and reposts of the quoted image.
 phash.import <file>                          100   Import image hashes from a file
 phash.scan                                   cli   Find and hash unhashed image events.
 

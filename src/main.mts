@@ -6,16 +6,14 @@ import { Util } from "./utils.mjs";
 import { Bot, Room, Member } from "./bot.mjs";
 import { Transaction } from "./database.mjs";
 
+import {config} from "../config/config.mjs";
+
 const rl = readline.createInterface({ input, output });
 
 async function main() {
 	await Util.sleep(1000);
-	let config = JSON.parse(
-		await fs.readFile("config.json", { encoding: "utf8" }),
-	);
 
 	let bot = new Bot(config);
-
 
 	/*
 	 _____                                           _     

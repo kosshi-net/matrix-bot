@@ -14,7 +14,6 @@ class pHashManager {
 
 	async load() {
 		let arr = await this.bot.db.phash.distinct("phash");
-		//this.cache = this.cache.concat(arr);
 		
 		for (let hash of arr) {
 			this.cache.push( Buffer.from(hash, "hex") );
@@ -28,7 +27,7 @@ class pHashManager {
 		let t_begin = performance.now();
 
 		let u = new URL(mxc);
-		let url = `https://${this.bot.config.hostname}/_matrix/media/v3/download/${u.host}${u.pathname}`;
+		let url = `${this.bot.config.matrix.protocol}//${this.bot.config.matrix.hostname}:${this.bot.config.matrix.port}/_matrix/media/v3/download/${u.host}${u.pathname}`;
 
 		let destination = `${u.host}${u.pathname}`.replaceAll(".", "_").replaceAll("/", "-");
 		destination = "/tmp/"+destination;

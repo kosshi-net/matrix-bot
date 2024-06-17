@@ -1,4 +1,5 @@
 import https from "https";
+import http from "http";
 import { getReasonPhrase } from "http-status-codes";
 
 function sleep(ms: number) {
@@ -16,8 +17,13 @@ function statusPhrase(code: number) {
 }
 
 function request(options: any, body: any) {
+	let lib:any = https;
+
+	if (options.protocol === "http:")
+		lib = http;
+
 	return new Promise(function (resolve, reject) {
-		let req = https.request(options, (r) => {
+		let req = lib.request(options, (r) => {
 			let data = "";
 			r.setEncoding("utf8");
 			r.on("data", (chunk) => {

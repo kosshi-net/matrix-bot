@@ -2,7 +2,7 @@ import { Util } from "./utils.mjs";
 import { StatusCodes } from "http-status-codes";
 
 class MatrixAPI {
-	config: any;
+	config: BotConfig;
 
 	txn: number;
 	sync_status: {
@@ -10,7 +10,7 @@ class MatrixAPI {
 		timeout: number;
 	};
 
-	constructor(config: any) {
+	constructor(config: BotConfig) {
 		this.txn = new Date().getTime();
 
 		this.sync_status = {
@@ -25,9 +25,11 @@ class MatrixAPI {
 		let call = {
 			method: "PUT",
 			path: `/_matrix/client/v3/rooms/${room_id}/send/${event_type}/${txn}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 		let body = JSON.stringify(content);
@@ -38,9 +40,11 @@ class MatrixAPI {
 	async v3_context(room_id: RoomID, event_id: string, limit = 10) {
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/context/${event_id}?limit=${limit}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 		let ret = await this.request(call, null);
@@ -56,9 +60,11 @@ class MatrixAPI {
 		}
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/state${opt}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 		let ret = await this.request(call, null);
@@ -74,9 +80,11 @@ class MatrixAPI {
 		}
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/members${opt}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 		let ret = await this.request(call, null);
@@ -89,9 +97,11 @@ class MatrixAPI {
 		let call = {
 			method: "PUT",
 			path: `/_matrix/client/v3/rooms/${room_id}/state/${type}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 
@@ -104,9 +114,11 @@ class MatrixAPI {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/kick`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 
@@ -123,9 +135,11 @@ class MatrixAPI {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/unban`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 
@@ -142,9 +156,11 @@ class MatrixAPI {
 		let call = {
 			method: "POST",
 			path: `/_matrix/client/v3/rooms/${room_id}/ban`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 
@@ -162,9 +178,11 @@ class MatrixAPI {
 		let call = {
 			method: "PUT",
 			path: `/_matrix/client/v3/rooms/${room_id}/redact/${event_id}/${txn}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 
@@ -176,9 +194,11 @@ class MatrixAPI {
 	async v3_messages(room_id: RoomID, token: UserID, limit = 10) {
 		let call = {
 			path: `/_matrix/client/v3/rooms/${room_id}/messages?limit=${limit}&from=${token}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 		let ret = await this.request(call, null);
@@ -198,9 +218,11 @@ class MatrixAPI {
 
 		let call = {
 			path: `/_matrix/client/v3/sync${query}`,
-			hostname: this.config.hostname,
+			hostname: this.config.matrix.hostname,
+			port:     this.config.matrix.port,
+			protocol: this.config.matrix.protocol,
 			headers: {
-				Authorization: `Bearer ${this.config.accessToken}`,
+				Authorization: `Bearer ${this.config.matrix.token}`,
 			},
 		};
 		let ret: any;

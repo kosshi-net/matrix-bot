@@ -1,5 +1,5 @@
 {
-	"include": ["./src/"],
+	"include": ["./src/", "./config"],
 	"compilerOptions": {
 		"module": "node16",
 		"target": "es2022",

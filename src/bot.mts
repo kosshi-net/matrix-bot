@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 
 //import { Util } from "./utils.mjs"
-import { CommandContext, CommandManager, Command } from "./command.mjs";
+import { CommandManager } from "./command.mjs";
 
 import { MatrixAPI } from "./matrix-api.mjs";
 import { Database } from "./database.mjs";
@@ -177,7 +177,7 @@ class Member {
 }
 
 class Bot {
-	config: any;
+	config: BotConfig;
 	db: Database;
 	api: MatrixAPI;
 	phash: pHashManager;
@@ -199,7 +199,7 @@ class Bot {
 	
 	cmd:CommandManager;
 
-	constructor(config:any) {
+	constructor(config:BotConfig) {
 		this.config = config;
 		this.db = new Database(this.config);
 		this.api = new MatrixAPI(this.config);
