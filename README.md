@@ -27,7 +27,7 @@ or truncated sync responses.
 
 
 ### Config
-See `src/matrix.d.ts` for config format. Create a file that exports a suitable
+See [src/matrix.d.ts](./src/matrix.d.ts) for config format. Create a file that exports a suitable
 object from `config/config.mts` (this file is .gitignored). 
 
 ### Adding bot to rooms
@@ -48,8 +48,10 @@ command line before db reset. Then run `import` once db has been rebuilt.
 
 ### Image repost detection
 The bot creates perceptual hashes of images posted to rooms where 
-`"phash"=true`, which is then used for repost detection. The bot reacts with 
+`phash:true`, which is then used for repost detection. The bot reacts with 
 ♻️  to pictures it deems are duplicates.
+
+For phash library, a golang one is used due to a lack of any decent Node.js libraries.
 
 ### User trust
 The bot uses gathered statistics to determine the "trust level" of users. This 
@@ -60,13 +62,6 @@ is to implement a type of
 [knocking](https://spec.matrix.org/v1.5/client-server-api/#mroomjoin_rules) 
 feature, which still gives read access and works for rooms below Version 7. 
 The "owner" of the bot is alerted about newly joined users.
-
-
-
-## Dependencies
-- Node.js
-- [mongodb](https://www.npmjs.com/package/mongodb)
-- [http-status-codes](https://www.npmjs.com/package/http-status-codes)
 
 ## License
 MIT
