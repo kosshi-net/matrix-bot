@@ -1,6 +1,7 @@
 import https from "https";
 import http from "http";
 import { getReasonPhrase } from "http-status-codes";
+import { isNumber } from "util";
 
 function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,10 +82,100 @@ function format_time(ms: number) {
 	return `${year}Y ${month % 12}M`;
 }
 
+
+function parse_time(time:string):number {
+
+	enum State {
+		num,
+		str,
+		parse,
+	};
+
+	time += "\0";
+
+	let state:State = State.num;
+
+	let ts = 0;
+
+	let buffer_num = "";
+	let buffer_str = "";
+
+	for (let i = 0; i < time.length; i++) {
+		let c = time[i];
+
+		if (c == "\0") state = State.parse;
+
+		if (state == State.num) {
+			if (c >= '0' && c <= '9') {
+				buffer_num += c;
+				continue;
+			} else {
+				state = State.str;
+			}
+		}
+
+		if (state == State.str) {
+			if (c >= '0' && c <= '9') {
+				state = State.parse,
+				i--;
+				continue;
+			} else {
+				buffer_str += c;
+				continue;
+			}
+		}
+		
+		if (state == State.parse) {
+			let num = parseInt(buffer_num);
+			if (!Number.isInteger(num)) {
+				throw `${buffer_num} is not a number`;
+			}
+			switch (buffer_str) {
+			case "d":
+			case "day":
+			case "days":
+				num *= 24;
+				/* fallthrough */
+			case "h":
+			case "hour":
+				num *= 60;
+				/* fallthrough */
+			case "min":
+				num *= 60;
+				/* fallthrough */
+			case "s":
+			case "sec":
+				num *= 1000;
+				/* fallthrough */
+			case "ms":
+				break;
+			default:
+				throw `${buffer_num}${buffer_str} is not a valid unit of time`;
+			}
+			ts += num;
+
+			buffer_num = "";
+			buffer_str = "";
+			state = State.num;
+			i--;
+		}
+
+		if (c == "\0") break;
+	}
+
+	if (buffer_num != "" || buffer_str != "") {
+		throw `Dangling symbols ${buffer_num}${buffer_str}`;
+	}
+
+	return ts;
+}
+
+
 let Util = {
 	sleep: sleep,
 	request: request,
 	format_time: format_time,
+	parse_time: parse_time,
 	status_phrase: statusPhrase,
 };
 

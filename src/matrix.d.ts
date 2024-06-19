@@ -6,6 +6,7 @@
  *
  */
 
+
 /* May sometimes be a macro, not a valid ID!!! Implement a special type? */
 type UserID    = `@${string}`; 
 
@@ -15,6 +16,18 @@ type RoomID    = `!${string}`;
 /* Alias can either be a room id, alias, or a room macro */
 type RoomAlias = `${'!'|'#'}${string}`;
 
+type EventID = `$${string}`;
+
+interface MatrixEvent {
+	type:   string,
+	sender: UserID,
+	content: any,
+	origin_server_ts: number,
+	unsigned: any,
+	event_id: EventID,
+	room_id: RoomID,
+	state_key: string,
+}
 
 /* Config type */
 

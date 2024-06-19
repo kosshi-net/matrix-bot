@@ -69,19 +69,22 @@ class Transaction {
 }
 
 class Database {
-	client: MongoClient;
+	client:   MongoClient;
 	database: Db;
-	events: Collection;
-	users: Collection;
-	meta: Collection;
-	phash: Collection;
+	events:   Collection;
+	users:    Collection;
+	meta:     Collection;
+	phash:    Collection;
+	schedule: Collection;
+
 	constructor(config: BotConfig) {
-		this.client = new MongoClient(config.db_url);
+		this.client   = new MongoClient(config.db_url);
 		this.database = this.client.db("2023-06-16");
-		this.events = this.database.collection("events");
-		this.users = this.database.collection("users");
-		this.meta = this.database.collection("meta");
-		this.phash = this.database.collection("phash");
+		this.events   = this.database.collection("events");
+		this.users    = this.database.collection("users");
+		this.meta     = this.database.collection("meta");
+		this.phash    = this.database.collection("phash");
+		this.schedule = this.database.collection("schedule");
 	}
 
 	async wipe() {

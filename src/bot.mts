@@ -278,6 +278,9 @@ class Bot {
 			await this.db.new_event(e);
 			await this.userdb_event(e);
 			this.var._counter++;
+			if (e.content?.msgtype == "m.image") {
+				await this.phash.check(e);
+			}
 		} else {
 			tags.push("old");
 		}
@@ -318,15 +321,13 @@ class Bot {
 			if (e.type == "m.room.member") {
 				await this.join_alert(e);
 			}
+
 		}
 
 		if (e.type == "m.room.message") {
 			tags.push(e.content.msgtype);
 		}
 
-		if (live && e.content?.msgtype == "m.image") {
-			await this.phash.check(e);
-		}
 
 		console.log(
 			`${tags.join(" ")} ${e.type} ${e.sender} ${this.rooms[e.room_id]?.name || e.room_id} `,

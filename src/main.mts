@@ -180,6 +180,23 @@ async function main() {
 	.set_level(50)
 	.register(bot.cmd);
 
+	new Command("send <#rooms> <msg>", async function (this:Bot, ctx:CommandContext) {
+		await ctx.for_rooms(async (room_id:RoomID) => {
+			
+			let content = {
+				body: ctx.argv[1],
+				msgtype: "m.text",
+			};
+
+			await this.api.v3_send(room_id, "m.room.message", content);
+
+		});
+	})
+	.set_description("Make the bot send a message.")
+	.allow_any_room()
+	.set_level(100)
+	.register(bot.cmd);
+
 	/*     _   _           _     
 		  | | | |         | |    
 	 _ __ | |_| | __ _ ___| |__  
@@ -534,6 +551,79 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
+	/*
+	 _____      _              _       _      
+	/  ___|    | |            | |     | |     
+	\ `--.  ___| |__   ___  __| |_   _| | ___ 
+	 `--. \/ __| '_ \ / _ \/ _` | | | | |/ _ \
+	/\__/ / (__| | | |  __/ (_| | |_| | |  __/
+	\____/ \___|_| |_|\___|\__,_|\__,_|_|\___|
+
+	*/                                    
+	bot.cmd.md += "\n# Scheduling commands\n";
+
+
+	new Command("sched.once <command> <time>", async function (this:Bot, ctx:CommandContext) {
+		let ts  = Util.parse_time(ctx.argv[2]);
+		let cmd = ctx.argv[1];
+
+		let now = new Date().getTime();
+
+		let doc = {
+			cmd:     cmd,
+			ts_next: now+ts,
+			ts_step: ts, 
+			repeat:  false
+		};
+
+		await this.db.schedule.insertOne(doc);
+
+		let d = new Date(doc.ts_next);
+
+		let d_y   = d.getUTCFullYear();
+		let d_m   = (d.getUTCMonth()+1).toString().padStart(2, "0");
+		let d_d   = (d.getUTCDay()+1)  .toString().padStart(2, "0");
+		let d_h   = d.getUTCHours()    .toString().padStart(2, "0");
+		let d_min = d.getUTCMinutes()  .toString().padStart(2, "0");
+		let d_sec = d.getUTCSeconds()  .toString().padStart(2, "0");
+
+		let tstr = `${d_y}-${d_m}-${d_d} ${d_h}:${d_min}:${d_sec}`;
+
+		await ctx.reply(`Command <code>${cmd}</code> scheduled for ${tstr}`);
+	})
+	.set_description("Schedule a command.")
+	.set_level(100)
+	.allow_any_room()
+	.register(bot.cmd);
+
+
+	new Command("sched.list", async function (this:Bot, ctx:CommandContext) {
+		let list = await this.db.schedule.find().toArray();
+
+		for (let item of list) {
+			console.log(item);
+		}
+
+	})
+	.set_description("List schedule.")
+	.register(bot.cmd);
+
+
+	setInterval(async ()=>{
+		if (bot.var.unsynced) return;
+
+		let ts = new Date().getTime();
+		let query = {ts_next:{$lt:ts}};
+		let list = await bot.db.schedule.find(query).toArray();
+
+		for (let item of list) {
+			
+			await bot.db.schedule.deleteOne({_id:item._id});
+			await bot.cmd.run(null, `!${item.cmd}`);
+
+		}
+	}, 1000);
+
 
 	/*
 	  ___  _____  _     
@@ -592,7 +682,7 @@ async function main() {
 	|___/ \__,_|\__\__,_|_.__/ \__,_|___/\___|
 	*/
 
-	bot.cmd.md += "\n# Databse queries\n";
+	bot.cmd.md += "\n# Database queries\n";
 
 	new Command("db.query <collection> <query>", async function (this:Bot, ctx:CommandContext) {
 
@@ -639,7 +729,7 @@ async function main() {
 	.register(bot.cmd);
 
 
-	new Command("dump_mxc [#rooms..] <filename.json>", async function (this:Bot, ctx:CommandContext) {
+	new Command("db.dump_mxc [#rooms..] <filename.json>", async function (this:Bot, ctx:CommandContext) {
 		let filename = ctx.argv[1];
 		let out = [];
 		if (!filename) {
@@ -662,6 +752,7 @@ async function main() {
 	.set_level(100)
 	.allow_any_room()
 	.register(bot.cmd);
+
 
 
 	/*
@@ -718,6 +809,16 @@ async function main() {
 	new Command("cli-only", async function (_:CommandContext) {
 	})
 	.set_description("(DEBUG ONLY) NO-OP")
+	.register(bot.cmd);
+
+
+	new Command("parse_time <time>", async function (this:Bot, ctx:CommandContext) {
+		let ts = Util.parse_time(ctx.argv[1]);
+		await ctx.reply(ts.toString());
+	})
+	.set_description("(DEBUG ONLY) Test time parsing")
+	.set_level(100)
+	.allow_any_room()
 	.register(bot.cmd);
 
 

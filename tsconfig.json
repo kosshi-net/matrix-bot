@@ -7,7 +7,8 @@
 		"esModuleInterop": true,
 		"moduleResolution": "node16",
 		"outDir":"build",
-		"types": ["node"]
+		"types": ["node"],
+		"noFallthroughCasesInSwitch": false
 	},
 	"exclude": ["build", "node_modules"]
 }

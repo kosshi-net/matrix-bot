@@ -8,6 +8,7 @@ help                                         50    Prints help.
 ping                                         1*    Pong!
 activity [#rooms..] [@users..] [tz:number]   50    Activity statistics and graphs
 react [emoji]                                50    Replies with a reaction.
+send <#rooms> <msg>                          100   Make the bot send a message.
 
 # pHash commands
 phash                                        50    Return the hash and reposts of the quoted image.
@@ -24,20 +25,25 @@ whitelist <@users..>                         50    Whitelists users (sets databa
 unban <@users..>                             50    Unban user in all managed rooms. You must run this only after !whitelist.
 joinrule [#rooms..] <public|invite>          50    Sets room to public or invite-only.
 
+# Scheduling commands
+sched.once <command> <time>                  100   Schedule a command.
+sched.list                                   cli   List schedule.
+
 # ACL commands
 acl <homeserver>                             100   Write homeserver to deny field of acl.json
 acl.reload                                   100   Load acl.json to all managed rooms.
 
-# Databse queries
+# Database queries
 db.query <collection> <query>                90    Query database
 db.get_user <@users..> [field]               90    Print user's database document, or a specific field of it.
-dump_mxc [#rooms..] <filename.json>          100   Save all m.image events to a file
+db.dump_mxc [#rooms..] <filename.json>       100   Save all m.image events to a file
 
 # Debug commands
 db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from database.
 testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal command context.
 throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
+parse_time <time>                            100   (DEBUG ONLY) Test time parsing
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
 
 * Available only in specific rooms
