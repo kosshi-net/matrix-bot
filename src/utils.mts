@@ -1,7 +1,6 @@
 import https from "https";
 import http from "http";
 import { getReasonPhrase } from "http-status-codes";
-import { isNumber } from "util";
 
 function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -50,19 +49,19 @@ function format_time(ms: number) {
 	let sec = Math.floor(ms / 1000);
 
 	if (sec <= 60) {
-		return `${sec}s`;
+		return `${sec}sec`;
 	}
 
 	let min = Math.floor(sec / 60);
 
 	if (min <= 60) {
-		return `${min}m ${sec % 60}s`;
+		return `${min}min ${sec % 60}sec`;
 	}
 
 	let hour = Math.floor(min / 60);
 
 	if (hour <= 24) {
-		return `${hour}h ${min % 60}m`;
+		return `${hour}h ${min % 60}min`;
 	}
 
 	let day = Math.floor(hour / 24);
@@ -82,6 +81,21 @@ function format_time(ms: number) {
 	return `${year}Y ${month % 12}M`;
 }
 
+
+function format_date(ts: number):string {
+	let d = new Date(ts);
+
+	let d_y   =  d.getUTCFullYear();
+	let d_m   = (d.getUTCMonth()+1) .toString().padStart(2, "0");
+	let d_d   = (d.getUTCDay()  +1) .toString().padStart(2, "0");
+	let d_h   =  d.getUTCHours()    .toString().padStart(2, "0");
+	let d_min =  d.getUTCMinutes()  .toString().padStart(2, "0");
+	let d_sec =  d.getUTCSeconds()  .toString().padStart(2, "0");
+
+	let tstr = `${d_y}-${d_m}-${d_d} ${d_h}:${d_min}:${d_sec}`;
+
+	return tstr;
+}
 
 function parse_time(time:string):number {
 
@@ -175,6 +189,7 @@ let Util = {
 	sleep: sleep,
 	request: request,
 	format_time: format_time,
+	format_date: format_date,
 	parse_time: parse_time,
 	status_phrase: statusPhrase,
 };

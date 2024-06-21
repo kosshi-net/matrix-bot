@@ -6,6 +6,7 @@ import { CommandManager } from "./command.mjs";
 import { MatrixAPI } from "./matrix-api.mjs";
 import { Database } from "./database.mjs";
 import { pHashManager } from "./phash-manager.mjs";
+import { Scheduler } from "./scheduler.mjs";
 
 async function import_history(db:Database) {
 	console.log("Importing history ...");
@@ -178,11 +179,12 @@ class Member {
 
 class Bot {
 	config: BotConfig;
-	db: Database;
-	api: MatrixAPI;
-	phash: pHashManager;
-	rooms: any;
-	exit: boolean;
+	db:     Database;
+	api:    MatrixAPI;
+	phash:  pHashManager;
+	sched:  Scheduler;
+	rooms:  any;
+	exit:   boolean;
 	var: {
 		_counter: number,
 		unsynced: boolean,
@@ -201,10 +203,11 @@ class Bot {
 
 	constructor(config:BotConfig) {
 		this.config = config;
-		this.db = new Database(this.config);
-		this.api = new MatrixAPI(this.config);
-		this.cmd = new CommandManager(this);
-		this.phash = new pHashManager(this);
+		this.db        = new Database(this.config);
+		this.api       = new MatrixAPI(this.config);
+		this.cmd       = new CommandManager(this);
+		this.phash     = new pHashManager(this);
+		this.sched     = new Scheduler(this);
 
 		this.var = {
 			_counter: 0,

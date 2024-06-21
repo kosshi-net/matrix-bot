@@ -415,6 +415,7 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
+
 	new Command("kick [#rooms..] <@users..>", async function (this:Bot, ctx:CommandContext) 
 	{
 		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => 
@@ -428,13 +429,22 @@ async function main() {
 	.register(bot.cmd);
 
 
-	new Command("mute [#rooms..] <@users>", async function (this:Bot, ctx:CommandContext) 
+	new Command("mute [#rooms..] <@users> [timeout]", async function (this:Bot, ctx:CommandContext) 
 	{
+		let ts = 0;
+		if (ctx.argv[1]) {
+			ts = Util.parse_time(ctx.argv[1]);
+		}
+
 		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => 
 		{
 			let member = new Member(this, room_id, user_id);
 			if (member.is_member()) {
 				await member.set_powerlevel(-1);
+
+				if (ts == 0) return;
+				
+				this.sched.once(`level ${room_id} ${user_id} 1`, ts);
 			}
 		});
 	})
@@ -444,8 +454,13 @@ async function main() {
 	.register(bot.cmd);
 
 
-	new Command("ban <@users..>", async function (this:Bot, ctx:CommandContext)
+	new Command("ban <@users..> [timeout]", async function (this:Bot, ctx:CommandContext)
 	{
+		let ts = 0;
+		if (ctx.argv[1]) {
+			ts = Util.parse_time(ctx.argv[1]);
+		}
+
 		await ctx.for_users(async (user_id:UserID)=>
 		{
 			let tx = new Transaction(this.db);
@@ -461,19 +476,58 @@ async function main() {
 				user.onjoin = "ban";
 			} while (await tx.retry());
 
-			for (let room in this.config.rooms) {
-				/* TODO Fix dirty cast!!! */
-				let member = new Member(this, room as RoomID, user_id);
+			let room_id:RoomID;
+			for (room_id in this.config.rooms) {
+				let member = new Member(this, room_id, user_id);
 				if (member.is_member()) {
 					await member.ban();
 					await member.set_powerlevel(0);
 				}
 			}
+
+			if (ts) {
+				this.sched.once(`unban ${user_id}`, ts);
+			}
+
 		});
 	})
 	.set_description(`Ban user from all managed rooms.`)
 	.set_level(50)
 	.allow_any_room()
+	.register(bot.cmd);
+
+
+	new Command("unban <@users..>", async function (this:Bot, ctx:CommandContext)
+	{
+		await ctx.for_users(async (user_id:UserID)=>
+		{
+			let tx = new Transaction(this.db);
+			do {
+				let user = await tx.user(user_id);
+				if (!user) {
+					await ctx.reply("Invalid user!");
+					await tx.abort();
+					return;
+				}
+				user.onjoin = "whitelist";
+			} while (await tx.retry());
+			
+			let room_id:RoomID;
+			for (room_id in this.config.rooms) {
+				let member = new Member(this, room_id, user_id);
+				if (member.is_member() && member.powerlevel() <= 0) {
+					await member.set_powerlevel(1);
+				}
+				if (member.is_banned()) {
+					await member.unban();
+				}
+			}
+			
+		});
+	})
+	.set_description(`Unban user in all managed rooms.`)
+	.allow_any_room()
+	.set_level(50)
 	.register(bot.cmd);
 
 
@@ -492,7 +546,6 @@ async function main() {
 					return;
 				}
 				user.onjoin = "whitelist";
-				console.log("Retry");
 				await Util.sleep(1000);
 			} while (await tx.retry());
 
@@ -512,23 +565,6 @@ async function main() {
 	.register(bot.cmd);
 
 
-	new Command("unban <@users..>", async function (this:Bot, ctx:CommandContext)
-	{
-		await ctx.for_users(async (user_id:UserID)=>
-		{
-			for (let room in this.config.rooms) {
-				/* TODO Fix dirty cast!!! */
-				let member = new Member(this, room as RoomID, user_id);
-				if (member.is_banned()) {
-					await member.unban();
-				}
-			}
-		});
-	})
-	.set_description(`Unban user in all managed rooms. You must run this only after !whitelist.`)
-	.allow_any_room()
-	.set_level(50)
-	.register(bot.cmd);
 
 
 	new Command("joinrule [#rooms..] <public|invite>", async function (this:Bot, ctx:CommandContext)
@@ -562,37 +598,16 @@ async function main() {
 	*/                                    
 	bot.cmd.md += "\n# Scheduling commands\n";
 
-
-	new Command("sched.once <command> <time>", async function (this:Bot, ctx:CommandContext) {
+	new Command("sched.once <command> <timeout>", async function (this:Bot, ctx:CommandContext) {
 		let ts  = Util.parse_time(ctx.argv[2]);
 		let cmd = ctx.argv[1];
-
-		let now = new Date().getTime();
-
-		let doc = {
-			cmd:     cmd,
-			ts_next: now+ts,
-			ts_step: ts, 
-			repeat:  false
-		};
-
-		await this.db.schedule.insertOne(doc);
-
-		let d = new Date(doc.ts_next);
-
-		let d_y   = d.getUTCFullYear();
-		let d_m   = (d.getUTCMonth()+1).toString().padStart(2, "0");
-		let d_d   = (d.getUTCDay()+1)  .toString().padStart(2, "0");
-		let d_h   = d.getUTCHours()    .toString().padStart(2, "0");
-		let d_min = d.getUTCMinutes()  .toString().padStart(2, "0");
-		let d_sec = d.getUTCSeconds()  .toString().padStart(2, "0");
-
-		let tstr = `${d_y}-${d_m}-${d_d} ${d_h}:${d_min}:${d_sec}`;
-
-		await ctx.reply(`Command <code>${cmd}</code> scheduled for ${tstr}`);
+		if (!cmd) throw "No command to schedule";
+		let doc = await this.sched.once(cmd, ts);
+		await ctx.reply(`Command <code>${cmd}</code> scheduled for ${Util.format_date(doc.ts_next)}`);
 	})
 	.set_description("Schedule a command.")
-	.set_level(100)
+	/* WARNING! Priviledge escalation if you set this below 100 */
+	.set_level(100) 
 	.allow_any_room()
 	.register(bot.cmd);
 
@@ -600,29 +615,23 @@ async function main() {
 	new Command("sched.list", async function (this:Bot, ctx:CommandContext) {
 		let list = await this.db.schedule.find().toArray();
 
+		let ts_now = new Date().getTime();
+		
+		let out = "<pre><code>\n";
+
 		for (let item of list) {
-			console.log(item);
+			let str = `At ${Util.format_date(item.ts_next)}, in ${Util.format_time(item.ts_next-ts_now)}`;
+			out += `${str}\n${item.cmd}\n\n`;
 		}
 
+		out += "</code></pre>";
+
+		await ctx.reply(out);
 	})
 	.set_description("List schedule.")
+	.allow_any_room()
+	.set_level(50)
 	.register(bot.cmd);
-
-
-	setInterval(async ()=>{
-		if (bot.var.unsynced) return;
-
-		let ts = new Date().getTime();
-		let query = {ts_next:{$lt:ts}};
-		let list = await bot.db.schedule.find(query).toArray();
-
-		for (let item of list) {
-			
-			await bot.db.schedule.deleteOne({_id:item._id});
-			await bot.cmd.run(null, `!${item.cmd}`);
-
-		}
-	}, 1000);
 
 
 	/*
@@ -812,7 +821,7 @@ async function main() {
 	.register(bot.cmd);
 
 
-	new Command("parse_time <time>", async function (this:Bot, ctx:CommandContext) {
+	new Command("parse_time <timeout>", async function (this:Bot, ctx:CommandContext) {
 		let ts = Util.parse_time(ctx.argv[1]);
 		await ctx.reply(ts.toString());
 	})
@@ -879,6 +888,9 @@ Currently implemented macros:
 
 Commands for user macros will be ran only in the rooms where the condition is 
 true.
+
+## Timeouts
+Examples: '2day6hour10min30sec', '1min30sec', '30d'
 
 ## Editing this file
 This file is generated from 'main.mts' and 'command.mts', when the bot is ran 

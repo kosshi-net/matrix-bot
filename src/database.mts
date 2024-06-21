@@ -1,4 +1,5 @@
 import { MongoClient, Collection, Db, ClientSession } from "mongodb";
+import { Util } from "./utils.mjs";
 
 class Transaction {
 	db: Database;
@@ -56,6 +57,7 @@ class Transaction {
 			if (error.hasErrorLabel("TransientTransactionError")) {
 				console.log(error);
 				this.reset_cache();
+				await Util.sleep(1000);
 				return true;
 			} else {
 				console.log(error);
