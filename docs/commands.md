@@ -19,14 +19,14 @@ phash.scan                                   cli   Find and hash unhashed image 
 level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
 redact [#rooms..] <@users>                   50    Redacts user's avatar and displayname.
 kick [#rooms..] <@users..>                   50    Kick user from target rooms.
-mute [#rooms..] <@users> [duration]          50    Mute user in target rooms.
-ban <@users..> [duration]                    50    Ban user from all managed rooms.
+mute [#rooms..] <@users> [timeout]           50    Mute user in target rooms.
+ban <@users..> [timeout]                     50    Ban user from all managed rooms.
 unban <@users..>                             50    Unban user in all managed rooms.
 whitelist <@users..>                         50    Whitelists users (sets database.onjoin to "whitelist")
 joinrule [#rooms..] <public|invite>          50    Sets room to public or invite-only.
 
 # Scheduling commands
-sched.once <command> <time>                  100   Schedule a command.
+sched.once <command> <timeout>               100   Schedule a command.
 sched.list                                   50    List schedule.
 
 # ACL commands
@@ -43,7 +43,7 @@ db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from 
 testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal command context.
 throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
-parse_time <time>                            100   (DEBUG ONLY) Test time parsing
+parse_time <timeout>                         100   (DEBUG ONLY) Test time parsing
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
 
 * Available only in specific rooms
@@ -75,6 +75,9 @@ Currently implemented macros:
 
 Commands for user macros will be ran only in the rooms where the condition is 
 true.
+
+## Timeouts
+Examples: `2day6hour10min30sec`, `1min30sec`, `30d`
 
 ## Editing this file
 This file is generated from `main.mts` and `command.mts`, when the bot is ran 
