@@ -87,7 +87,7 @@ function format_date(ts: number):string {
 
 	let d_y   =  d.getUTCFullYear();
 	let d_m   = (d.getUTCMonth()+1) .toString().padStart(2, "0");
-	let d_d   = (d.getUTCDay()  +1) .toString().padStart(2, "0");
+	let d_d   =  d.getUTCDate()     .toString().padStart(2, "0");
 	let d_h   =  d.getUTCHours()    .toString().padStart(2, "0");
 	let d_min =  d.getUTCMinutes()  .toString().padStart(2, "0");
 	let d_sec =  d.getUTCSeconds()  .toString().padStart(2, "0");
