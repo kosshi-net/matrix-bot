@@ -208,40 +208,48 @@ class CommandContext {
 			for (let macro of this.target.user_id) {
 				
 				let arg = macro.split("=");
+				
+				/* Consider a switch? */
 				if (arg[0] === "@level") {
 					let level = parseInt(arg[1]);
 					if (isNaN(level)) {
 						// Return an error somehow?
 						continue;
 					}
-					
 					let room = this.bot.get_room(room_id);
 					let ships = room.get_all_memberships();
-					
 					ships.forEach((state, user_id) => {
 						if(state == "join") {
-							
 							let member = room.get_member(user_id);
 							if (member.powerlevel() == level) {
 								map.set(user_id, true);
 							}
 						}
 					});
-
 					continue;
-					
 				}
 
 				if (macro == "@banned") {
 					let room = this.bot.get_room(room_id);
 					let ships = room.get_all_memberships();
-					
 					ships.forEach((state, user_id) => {
 						if (state == "ban") 
 							map.set(user_id, true);
 					});
 					continue;
 				}
+
+				if (arg[0] == "@hs") {
+					let room = this.bot.get_room(room_id);
+					let ships = room.get_all_memberships();
+					ships.forEach((state, user_id) => {
+						let user_hs = user_id.split(":")[1];
+						if (state == "join" && user_hs === arg[1]) 
+							map.set(user_id, true);
+					});
+					continue;
+				}
+
 
 				map.set(macro, true);
 			}

@@ -927,6 +927,7 @@ Currently implemented macros:
 * '#all' Expands to all managed rooms
 * '@banned' Expands to all banned users in a room
 * '@level=<number>' Expands to all users at a specific power level in a room
+* '@hs=<domain>' Expands to all joined users from specified homeserver in a room
 
 Commands for user macros will be ran only in the rooms where the condition is 
 true.
