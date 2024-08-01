@@ -92,7 +92,6 @@ class Command {
 	}
 	register(manager: CommandManager) {
 		manager.register(this);
-		console.log(this);
 	}
 }
 
@@ -276,6 +275,22 @@ class CommandContext {
 					await callback(room_id, user_id);
 				}
 			}
+		}
+	}
+
+
+	async notice(msg: string) {
+		if (this.event) {
+			let content = {
+				body: msg,
+				formatted_body: msg,
+				format: "org.matrix.custom.html",
+				msgtype: "m.notice",
+			};
+			
+			await this.bot.api.v3_send(this.event.room_id, "m.room.message", content);
+		} else {
+			console.log(msg);
 		}
 	}
 

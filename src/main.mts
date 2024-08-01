@@ -11,7 +11,8 @@ import {config} from "../config/config.mjs";
 const rl = readline.createInterface({ input, output });
 
 async function main() {
-	await Util.sleep(1000);
+	if (process.env.MAKE_DOCS != "1") 
+		await Util.sleep(1000);
 
 	let bot = new Bot(config);
 
@@ -96,8 +97,8 @@ async function main() {
 		let activity_hour = new Int32Array(24);
 		let activity_day = new Int32Array(7);
 		let total = 0;
+
 		await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => {
-			
 			let query = { room_id: room_id, sender: user_id };
 			let events = await this.db.events.find(query).toArray();
 			total += events.length;
@@ -105,16 +106,14 @@ async function main() {
 			for (let e of events) {
 				
 				let date = new Date(e.origin_server_ts + (1000*60*60*timezone));
-				//let h = (date.getUTCHours() + timezone + 24) % 24;
 				let h = (date.getUTCHours());
 				activity_hour[h]++;
 
 				let d = (date.getUTCDay());
 				activity_day[d]++;
-
 			}
-
 		});
+
 		let output = "<pre><code>\n";
 		let sign = timezone < 0 ? "" : "+";
 		output += `Timezone: GMT${sign}${timezone}\n`;
@@ -162,7 +161,6 @@ async function main() {
 		}
 		output += "</code></pre>\n";
 
-
 		await ctx.reply(output);
 	})
 	.set_description("Activity statistics and graphs")
@@ -196,6 +194,8 @@ async function main() {
 	.allow_any_room()
 	.set_level(100)
 	.register(bot.cmd);
+
+
 
 	/*     _   _           _     
 		  | | | |         | |    
@@ -333,6 +333,51 @@ async function main() {
 	.register(bot.cmd);
 
 
+	new Command("phash.top", async function (ctx) {
+		
+		let query = {
+			sender: this.config.matrix.user,  // TODO implement whoami
+			type: "m.reaction"
+		};
+		
+		let list = await this.db.events.find(query).toArray();
+		console.log(`Found ${list.length}`);
+		let map = {};
+
+		for (let r of list) 
+		{
+			if (r.content["m.relates_to"].key != "♻️") continue;
+
+			let e_id = r.content["m.relates_to"].event_id;
+			let e = await this.db.get_event(r.room_id, e_id);
+
+			if (e.content?.msgtype != "m.image") continue;
+
+			map[e.sender] ??= 0;
+			map[e.sender]++;
+		}
+
+		let arr = [];
+		for (let key in map) {
+			arr.push({sender: key, count: map[key]});
+		}
+
+		arr.sort((a, b)=>{ return b.count - a.count; });
+		
+		let out = "<pre><code>Reposts:\n";
+		for (let obj of arr) {
+			out += `${obj.sender.padEnd(50, ".")} ${obj.count}\n`;
+		};
+		out += "</code></pre>";
+		
+		await ctx.notice(out);
+
+	})
+	.set_description("Print image reposts statistics.")
+	.allow_any_room()
+	.set_level(50)
+	.register(bot.cmd);
+
 	/*
 	___  ___          _                _   _             
 	|  \/  |         | |              | | (_)            
@@ -441,10 +486,8 @@ async function main() {
 			let member = new Member(this, room_id, user_id);
 			if (member.is_member()) {
 				await member.set_powerlevel(-1);
-
 				if (ts == 0) return;
-				
-				this.sched.once(`level ${room_id} ${user_id} 1`, ts);
+				await this.sched.once(`level ${room_id} ${user_id} 1`, ts);
 			}
 		});
 	})
@@ -486,7 +529,7 @@ async function main() {
 			}
 
 			if (ts) {
-				this.sched.once(`unban ${user_id}`, ts);
+				await this.sched.once(`unban ${user_id}`, ts);
 			}
 
 		});
@@ -563,8 +606,6 @@ async function main() {
 	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
-
-
 
 
 	new Command("joinrule [#rooms..] <public|invite>", async function (this:Bot, ctx:CommandContext)
@@ -713,7 +754,7 @@ async function main() {
 
 	})
 	.set_description("Query database")
-	.set_level(90)
+	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
 	
@@ -733,7 +774,7 @@ async function main() {
 		});
 	})
 	.set_description("Print user's database document, or a specific field of it.")
-	.set_level(90)
+	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
 
@@ -803,6 +844,7 @@ async function main() {
 	})
 	.set_description("(DEBUG ONLY) Prints internal command context.")
 	.allow_any_room()
+	.set_level(50)
 	.register(bot.cmd);
 
 
@@ -826,7 +868,7 @@ async function main() {
 		await ctx.reply(ts.toString());
 	})
 	.set_description("(DEBUG ONLY) Test time parsing")
-	.set_level(100)
+	.set_level(50)
 	.allow_any_room()
 	.register(bot.cmd);
 
@@ -854,7 +896,7 @@ async function main() {
 																		   
 	*/
 
-   bot.cmd.md += "\n* Available only in specific rooms";
+	bot.cmd.md += "\n* Available only in specific rooms";
 	help = bot.cmd.md;
 	bot.cmd.md = "\n\n```md\n" + bot.cmd.md;
 

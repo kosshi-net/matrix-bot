@@ -7,6 +7,7 @@ import { MatrixAPI } from "./matrix-api.mjs";
 import { Database } from "./database.mjs";
 import { pHashManager } from "./phash-manager.mjs";
 import { Scheduler } from "./scheduler.mjs";
+import { Util } from "./utils.mjs";
 
 async function import_history(db:Database) {
 	console.log("Importing history ...");
@@ -282,7 +283,7 @@ class Bot {
 			await this.userdb_event(e);
 			this.var._counter++;
 			if (e.content?.msgtype == "m.image") {
-				await this.phash.check(e);
+				void this.phash.check(e);
 			}
 		} else {
 			tags.push("old");
@@ -568,10 +569,14 @@ class Bot {
 
 			setTimeout(async () => {
 				// TODO this will throw unhandled!
-				await this.api.v3_kick(
+				await this.api.v3_ban(
 					room.id,
 					user.id,
-					"You seem like a bot. To bypass, set an avatar or a displayname."
+					"You seem like a bot. To bypass, set an avatar or a displayname. This ban expires in 5 minutes."
+				);
+				await this.sched.once(
+					`unban ${room.id} ${user.id}`,
+					Util.parse_time("5min")
 				);
 			}, 1500);
 			return;
@@ -597,10 +602,14 @@ class Bot {
 		if (this.config.rooms[room.id].trusted_only) {
 			setTimeout(async () => {
 				// TODO this will throw unhandled!
-				await this.api.v3_kick(
+				await this.api.v3_ban(
 					room.id,
 					user.id,
 					this.config.gatekeep_kick_message,
+				);
+				await this.sched.once(
+					`unban ${room.id} ${user.id}`,
+					Util.parse_time("30min")
 				);
 			}, 1500);
 

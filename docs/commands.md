@@ -14,6 +14,7 @@ send <#rooms> <msg>                          100   Make the bot send a message.
 phash                                        50    Return the hash and reposts of the quoted image.
 phash.import <file>                          100   Import image hashes from a file
 phash.scan                                   cli   Find and hash unhashed image events.
+phash.top                                    50    Print image reposts statistics.
 
 # Moderaion commands
 level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
@@ -34,16 +35,16 @@ acl <homeserver>                             100   Write homeserver to deny fiel
 acl.reload                                   100   Load acl.json to all managed rooms.
 
 # Database queries
-db.query <collection> <query>                90    Query database
-db.get_user <@users..> [field]               90    Print user's database document, or a specific field of it.
+db.query <collection> <query>                50    Query database
+db.get_user <@users..> [field]               50    Print user's database document, or a specific field of it.
 db.dump_mxc [#rooms..] <filename.json>       100   Save all m.image events to a file
 
 # Debug commands
 db.forget_user <@users..>                    100   (DEBUG ONLY) Drops user from database.
-testctx [#rooms..] [@users..] [args..]       100   (DEBUG ONLY) Prints internal command context.
+testctx [#rooms..] [@users..] [args..]       50    (DEBUG ONLY) Prints internal command context.
 throw                                        100   (DEBUG ONLY) Throw an error.
 cli-only                                     cli   (DEBUG ONLY) NO-OP
-parse_time <timeout>                         100   (DEBUG ONLY) Test time parsing
+parse_time <timeout>                         50    (DEBUG ONLY) Test time parsing
 eval <code>                                  100   (DEBUG ONLY) Evaluate JavaScript code.
 
 * Available only in specific rooms

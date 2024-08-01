@@ -33,6 +33,7 @@ interface MatrixEvent {
 
 interface BotConfig {
 	matrix: {
+		user:     UserID,
 		token:    string,
 		hostname: string,
 		port: number,

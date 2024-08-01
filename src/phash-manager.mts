@@ -65,13 +65,11 @@ class pHashManager {
 
 		let t_finished = performance.now();
 
-
 		console.log(`Download: ${t_downloaded - t_begin} ms`);
 		console.log(`Write:    ${t_wrote - t_downloaded} ms`);
 		console.log(`Hash:     ${t_hashed - t_wrote} ms`);
 		console.log(`Finish:   ${t_finished - t_hashed} ms`);
 		console.log(`Total:    ${t_finished - t_begin} ms`);
-
 
 		return hash;
 	}
