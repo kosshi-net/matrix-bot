@@ -19,6 +19,7 @@ phash.top                                    50    Print image reposts statistic
 # Moderaion commands
 level [#rooms..] <@users..> [number]         50    Set or get user powerlevels.
 redact [#rooms..] <@users>                   50    Redacts user's avatar and displayname.
+creditlimit [#rooms..] <@users> [num]        100   Set or query user's daily event limits.
 kick [#rooms..] <@users..>                   50    Kick user from target rooms.
 mute [#rooms..] <@users> [timeout]           50    Mute user in target rooms.
 ban <@users..> [timeout]                     50    Ban user from all managed rooms.

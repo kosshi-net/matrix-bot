@@ -845,6 +845,43 @@ class Bot {
 		let user = await this.get_user_by_event(e);
 		user.rooms[e.room_id].events[e.type] ??= 0;
 		user.rooms[e.room_id].events[e.type]++;
+
+		let ratelimit = user.rooms[e.room_id].ratelimit;
+		if (ratelimit?.limit && !this.var.unsynced) {
+
+			let now = new Date().getTime();
+			if (now > ratelimit.reset) {
+				console.log("Reset");
+				ratelimit.count = 0;
+				ratelimit.reset = now + (1000*60*60*12);
+			}
+
+			let cost = 1;
+
+			if (e.type == "m.room.message") {
+				if (e.content.msgtype == "m.video")
+					cost = 10;
+
+				if (e.content.msgtype == "m.image")
+					cost = 5;
+			}
+
+			ratelimit.count += cost;
+
+			if (ratelimit.count >= ratelimit.limit) {
+				console.log("Exceed");
+				/* Mute the user */
+				await this.send_mention(e.room_id, [e.sender], "You have exceeded your daily event credit.");
+
+				let member = new Member(this, e.room_id, e.sender);
+				await member.set_powerlevel(-1);
+				let ts = Util.parse_time("12h");
+				await this.sched.once(`level ${member.room_id} ${member.id} 1`, ts);
+			}
+
+			user.rooms[e.room_id].ratelimit = ratelimit; // Unnecessary but comforts me
+		}
+
 		await this.db.put_user(user);
 
 		if (e.type == "m.room.redaction") {

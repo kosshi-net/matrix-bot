@@ -460,6 +460,58 @@ async function main() {
 	.allow_any_room()
 	.register(bot.cmd);
 
+	new Command("creditlimit [#rooms..] <@users> [num]", async function (this:Bot, ctx:CommandContext) 
+	{
+		let num = 0;
+		if (ctx.argv[1]) 
+			num = parseInt(ctx.argv[1]);
+
+		if (!num) {
+			let now = new Date().getTime();
+			let out = "<pre><code>";
+			await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => {
+				out += `${user_id}\n${this.get_alias(room_id)}\n`;
+				let user = await this.db.get_user(user_id);
+				let ratelimit = user.rooms[room_id].ratelimit;
+				if (!ratelimit) {
+					out += `No event credit limit\n\n`;
+				} else {
+					let expirity = "";
+					if (now < ratelimit.reset) {
+						expirity = `expires in ${Util.format_time(ratelimit.reset-now)}`;
+					} else {
+						expirity = `expired ${Util.format_time(now-ratelimit.reset)} ago`;
+					}
+					out += `${ratelimit.count} / ${ratelimit.limit}, ${expirity}\n\n`;
+				}
+			});
+			out += "</code></pre>";
+			await ctx.notice(out);
+			return;
+		}
+
+		let tx = new Transaction(this.db);
+		do {
+			await ctx.for_pairs(async (room_id:RoomID, user_id:UserID) => {
+				let user = await tx.user(user_id);
+				user.rooms[room_id] ??= {};
+				if (!user.rooms[room_id].ratelimit) { 
+					user.rooms[room_id].ratelimit = {
+						reset: new Date().getTime(),
+						limit: num,
+						count: 0
+					};
+				} else {
+					user.rooms[room_id].ratelimit.limit = num;
+				}
+			});
+		} while (await tx.retry());
+	})
+	.set_description("Set or query user's daily event limits.")
+	.set_level(100)
+	.allow_any_room()
+	.register(bot.cmd);
+
 
 	new Command("kick [#rooms..] <@users..>", async function (this:Bot, ctx:CommandContext) 
 	{
