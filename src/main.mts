@@ -604,7 +604,7 @@ async function main() {
 					await tx.abort();
 					return;
 				}
-				user.onjoin = "whitelist";
+				user.onjoin = "";
 			} while (await tx.retry());
 			
 			let room_id:RoomID;
