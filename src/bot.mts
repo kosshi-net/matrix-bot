@@ -868,12 +868,11 @@ class Bot {
 
 			ratelimit.count += cost;
 
-			if (ratelimit.count >= ratelimit.limit) {
-				console.log("Exceed");
+			let member = this.get_member(e.room_id, e.sender);
+
+			if (ratelimit.count >= ratelimit.limit && member.powerlevel() > 0) {
 				/* Mute the user */
 				await this.send_mention(e.room_id, [e.sender], "You have exceeded your daily event credit.");
-
-				let member = new Member(this, e.room_id, e.sender);
 				await member.set_powerlevel(-1);
 				let ts = Util.parse_time("12h");
 				await this.sched.once(`level ${member.room_id} ${member.id} 1`, ts);
